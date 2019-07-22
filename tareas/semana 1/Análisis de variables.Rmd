@@ -29,7 +29,8 @@ Ejemplo:
 `casas <- read.csv('kc_house_data.csv', header = T, na.strings = '?')`
 
 ```{r}
-# Escriba su código aqui
+# Lee el dataset de info de casas en el condado de King. 
+info_casas <- read.csv("kc_house_data.csv", header = TRUE)
 ```
 
 Utilice la función summary sobre el dataset
@@ -39,7 +40,8 @@ Ejemplo:
 `summary(casas)`
 
 ```{r}
-# Escriba su código aqui
+# Muestra la información estadística básica de cada una de las variables. 
+summary(info_casas)
 ```
 
 ```{r}
@@ -59,13 +61,15 @@ Ejemplo
 `casas <-casas[,c(3,6)]`
 
 ```{r}
-# Escriba su código aqui
+# Limpia el dataset extrayendo solamente las variables por analizar "price" y "sqft_living".
+info_casas_tidy <- info_casas[c("price", "sqft_living")]
 ```
 
 Utilice la función summary sobre la nueva variable
 
 ```{r}
-# Escriba su código aqui
+# Muestra la información estadística básica de cada una de las variables en el dataset limpio. 
+summary(info_casas_tidy)
 ```
 
 Aplique la función de correlación para obtener las correlaciones entre las columnas seleccionadas (price, sqft_living)
@@ -75,7 +79,8 @@ Ejemplo:
 `cor(casas)`
 
 ```{r}
-# Escriba su código aqui
+# Se buscan correlaciones entre las variables "price" y "sqft_living".
+cor(info_casas_tidy)
 ```
 
 ### Interpretando los resultados de la correlación
@@ -102,8 +107,10 @@ Ejemplo
 `cor(casas, method='spearman')`
 
 ```{r}
-# Escriba su código aqui
+# Se buscan correlaciones entre las variables "price" y "sqft_living" empleando el coeficiente de Pearson.
+cor(info_casas_tidy, method='pearson')
 ```
+
 
 ### Visualización
 
@@ -116,7 +123,14 @@ Ejemplo
 `plot(y = casas$price,x = casas$sqft_living, main = 'Relación entre Precio y Metros cuadrados', ylab = 'price', xlab = 'sqft_living')`
 
 ```{r}
-# Escriba su código aqui
+# Con los datos del dataset limpio, se grafica un gráfico de dispersión entre el precio y los metros cuadrados. 
+with(data = info_casas_tidy, 
+     plot(sqft_living, price, 
+          main = 'Precios de casas según sus metros \ncuadrados en el condado de King', 
+          ylab = 'precio ($)', xlab = 'metros cuadrados (m2)', col = alpha("black", 0.5)))
+
+# Se agrega una línea de regresión lineal para observar mejor la correlación de los datos. 
+abline(lm(price ~ sqft_living, data = info_casas_tidy), col = "red", lty = 2, lwd = 2)
 ```
 
 ## Conclusiones
