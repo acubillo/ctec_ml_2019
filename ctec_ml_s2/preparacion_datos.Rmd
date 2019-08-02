@@ -67,7 +67,25 @@ Como podemos observar la columna bathrooms posee valores inconsistentes ya que n
 Modifique la columna bathrooms para que solo posea valores enteros
 
 ```{r}
-# Escriba su código aqui
+# Se aplica ceiling para redondear debido a que se está suponiendo que para el redondeo cualquiera 
+# de las siguientes configuraciones de baño cuentan como un baño completo:
+#
+# baño con lavatorio o sanitario (1/4 o 0.25)
+# baño con lavatorio y sanitario (1/2 o 0.5)
+# baño con ducha, lavatorio y sanitario (3/4 o 0.75)
+# baño con tina, ducha, lavatorio y sanitario (4/4 o 1)
+#
+# Por lo tanto se considera un valor de 1.5 (un baño completo y medio baño) como si fuesen 2 baños 
+# completos.
+#
+# Fuente: https://www.realtor.com/advice/sell/if-i-take-out-the-tub-does-a-bathroom-still-count-as-a-full-bath/
+#
+# Se crea una nueva variable llamada bathrooms_tidy con los valores limpios (esto com el fin de mantener
+# la trazabilidad de los cambios).
+casas$bathrooms_tidy <- ceiling(casas$bathrooms)
+
+# Validación de la transformación de los valores de la variable. 
+casas$bathrooms_tidy[1:10]
 ```
 
 ### 2. Llevar los datos a distribución normal.
@@ -77,10 +95,15 @@ Modifique la columna price del dataset de precios de casas para que siga una dis
 ```{r}
 # Precios antes de la modificación
 hist(casas$price)
-# Escriba su codigo aqui
-# ...
+
+# Transformación de los valores de la variable price usando log10.
+#
+# Se crea una nueva variable llamada price_tidy con los valores transformados (esto com el fin de mantener
+# la trazabilidad de los cambios).
+casas$price_tidy <- log10(casas$price)
+
 # Precios normalmente distribuidos
-hist(casas$price)
+hist(casas$price_tidy)
 ```
 
 Note que ahora los precios ya no se agrupan a la izquierda.
@@ -92,7 +115,23 @@ Reemplace los valores faltantes de la columna sqft_living con la mediana de los 
 Nota: este dataset no posee valores faltantes pero para efectos del ejercicio esto no nos afecta ya que el código sería igual.
 
 ```{r}
-# Escriba su código aqui
+# Cálculo de valor de la mediana para la variable sqft_living.
+sqft_living_median <- median(casas$sqft_living, na.rm = TRUE)
+
+# Se obtiene un vector booleano con los valores NA dentro de la variable sqft_living.
+sqft_living_isna <- is.na(casas$sqft_living)
+
+# Duplicación de los valores de la variable sqft_living como la nueva variable sqft_living_tidy.
+#
+# Se crea una nueva variable llamada sqft_living_tidy (esto com el fin de mantener la trazabilidad 
+# de los cambios).
+casas$sqft_living_tidy <- casas$sqft_living
+
+# Transformación de los valores NA de la variable sqft_living en el dataframe casas.
+casas$sqft_living_tidy[sqft_living_isna] <- sqft_living_median
+
+# Validación de la transformación de los valores de la variable.
+sum(is.na(casas$sqft_living_tidy))
 ```
 
 
@@ -113,7 +152,28 @@ feature_scaling <- function(x) {
 2. Compare el resultado con la función `scale()`
 
 ```{r}
-# Escriba su código aqui
+# Transformación de la variable sqft_lot utilizando la función feature_scaling.
+#
+# Se crea una nueva variables llamada sqft_lot_feature_scaled (esto com el fin de mantener la trazabilidad 
+# de los cambios).
+casas$sqft_lot_feature_scaled <- feature_scaling(casas$sqft_lot)
+
+# Transformación de la variable sqft_lot utilizando la función scale.
+#
+# Se crea una nueva variable llamada sqft_lot_scaled (esto com el fin de mantener la trazabilidad 
+# de los cambios).
+casas$sqft_lot_scaled <- scale(casas$sqft_lot)[,1]
+
+# Comparación de ambas funciones de escalamiento de atributos.
+#
+# La función feature_scaling emplea la normalización min-max.
+head(casas$sqft_lot_feature_scaled)
+# La función scale emplea la normalización z-score 
+# (en el siguiente bloque de código se observa este comportamiento usando la función z_score).
+#
+# Fuente: https://en.wikipedia.org/wiki/Feature_scaling#Methods
+#
+head(casas$sqft_lot_scaled)
 ```
 
 ### 5. Normalización con la función z-score
@@ -125,12 +185,35 @@ Escriba la función z_score y utilicela sobre la columna bathrooms.
 Pista: utilice las funciones `mean`, `sd`
 
 ```{r}
+# Creación de la función z_score. 
+z_score <- function(x) {
+  z_scored <- (x - mean(x)) / sd(x)
+  
+  return(z_scored)
+}
+
+# Como parte del ejercicio anterior aquí se observa el uso de la función z_score a la variable sqft_lot
+# y como ambas variable sqft_lot_z_score y sqft_lot_scaled retornan los mismos valores.
+#
+# (Esto no es parte de esta pregunta, pero me pareció interesante hacer la validación).
+casas$sqft_lot_z_score <- z_score(casas$sqft_lot)
+head(casas$sqft_lot_z_score)
+head(casas$sqft_lot_scaled)
+```
+
+```{r}
 # Datos antes de la transformación
 hist(casas$bathrooms)
-# Escriba su código aqui
-# ...
+
+# Transformación de los valores de bathrooms (transformación realizada previamente) utilizando la 
+# función z-score. 
+#
+# Se crea una nueva variable llamada bathrooms_z_scored (esto com el fin de mantener la trazabilidad 
+# de los cambios).
+casas$bathrooms_z_scored <- z_score(casas$bathrooms)
+
 # Después de la transformación
-hist(casas$bathrooms)
+hist(casas$bathrooms_z_scored)
 ```
 
 Note que ahora la media de los datos se acerca a 0
