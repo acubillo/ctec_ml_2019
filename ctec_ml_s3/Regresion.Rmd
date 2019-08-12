@@ -1,10 +1,21 @@
 ---
 title: "Regresion"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Se cargan las librerías empleadas en la tarea. 
+library(GGally) # carga el método ggpairs. 
+library(Metrics) # carga la métrica MSE.
+library(caTools) # carga el método sample.split. 
 ```
 
 # Tarea 3.
@@ -14,7 +25,7 @@ Análisis del Problema
 
 El desempeño de un automóvil se puede medir de diferentes formas. Algunas comunes son la cantidad de caballos de fuerza y el rendimiento del mismo, que se puede resumir en cuantas millas puede recorrer el automóvil por cada galón de combustible que consume. Para los clientes, potenciales compradores de un automóvil, este rendimiento es importante pues puede ayudar a tomar una decisión con respecto a cuál automóvil comprar (si, por ejemplo, el cliente quiere un auto que rinda por muchas millas y pueda economizar en la compra de combustible).
 
-Desde este punto de vista, tanto a clientes como a fabricadores de automóviles, les conviene entender cuál es la relación entre diferentes características del automóvil y su rendimiento, pues el conocer estas relaciones les puede ayudar a inferir cuál va a ser la eficiencia del vehículo a partir de ver los valores de otras características. Para fabricantes, puede ser importante conocer estas relaciones para saber cómo hacer cada modelo más eficiente con respecto al anterior.
+Desde este punto de vista, tanto a clientes como a fabricantes de automóviles, les conviene entender cuál es la relación entre diferentes características del automóvil y su rendimiento, pues el conocer estas relaciones les puede ayudar a inferir cuál va a ser la eficiencia del vehículo a partir de ver los valores de otras características. Para fabricantes, puede ser importante conocer estas relaciones para saber cómo hacer cada modelo más eficiente con respecto al anterior.
 
 Entendimiento de los Datos
 
@@ -35,13 +46,26 @@ Con el fin de analizar y tratar de estimar las millas por galón de diferentes m
 1. Cargue el archivo auto-mpg_g.csv en una variable
 
 ```{r}
-# Escriba su código aqui
+# Se carga el dataset en la variable autos_data. 
+autos_data <- read.csv("auto-mpg_g.csv", header = TRUE)
+
+# Se valida la carga correcta de los datos. 
+head(autos_data)
+
+# Se observa la estructura de los datos. 
+str(autos_data)
+
+# Se observan algunos detalles de los mismos. 
+summary(autos_data)
 ```
 
 2. Utilizando Ggpairs cree un gráfico de los atributos del dataset, observe las correlaciones entre atributos
 
 ```{r}
-# Escriba su código aqui
+# Se grafica las correlaciones entre variables (como parte del EDA y previo a limpiar los datos).
+# Se omiten los datos almacenados en las variables "model.year", "origin" y "model.name" debido 
+# a que estas son variables categóricas. 
+ggpairs(autos_data[, c("mpg", "cyl", "disp", "hp", "weight", "acc")])
 ```
 
 3. Separe los datos en 2 conjuntos, uno de entrenamiento y otro de pruebas. Normalmente se trabaja utilizando un 70-80% de los datos para entrenamiento y el resto para pruebas.
@@ -50,7 +74,17 @@ Recuerde fijar una semilla para que el documento sea reproducible.
 
 Pista: https://www.rdocumentation.org/packages/caTools/versions/1.17.1/topics/sample.split
 ```{r}
-# Escriba su código aqui
+# Se setea la semilla.
+set.seed(1)
+
+# Se genera el vector lógico para separar los dataframes de entrenamiento y pruebas.
+data_split <- sample.split(autos_data, SplitRatio = 0.8)
+
+# Se carga el dataset con los datos de entrenamiento.
+autos_train_data <- subset(autos_data, data_split == TRUE)
+
+# Se carga el dataset con los datos de prueba. 
+autos_test_data <- subset(autos_data, data_split == FALSE)
 ```
 
 4. Cree un modelo de regresion lineal utilizando el atributo mpg como la variable objetivo y en base a las correlaciones observadas en el gráfico del punto 2 escoja al menos dos atributos para usarlos como variables predictoras para el modelo.
@@ -60,22 +94,106 @@ Pista: https://www.rdocumentation.org/packages/lessR/versions/1.9.8/topics/reg
 Nota: Al crear el modelo utilice el conjunto de datos de entrenamiento definido en el punto 3.
 
 ```{r}
-# Escriba su código aqui
+# Se crea un modelo de regresión lineal empleando como variables predictorias a "disp" y "weight". 
+autos_model <- lm(mpg ~ weight + disp, autos_train_data)
 ```
 
 5. Realice predicciones utilizando el conjunto de pruebas y evalue el resultado con la métrica MSE.
 
 Pista: https://www.rdocumentation.org/packages/mltools/versions/0.3.5/topics/mse
 ```{r}
-library(Metrics)
-# Escriba su código aqui
+# Se realiza la predicción de los datos de prueba. 
+mpg_prediction <- predict(autos_model, autos_test_data)
+
+# Se calcula el error cuadrático medio (mean-square error). 
+autos_mse <- mse(mpg_prediction, autos_test_data$mpg)
+autos_mse
 ```
 
 6. Opcional
 
 6.a Pruebe varios modelos que utilicen diferentes variables y comparar los resultados obtenidos
 
+```{r}
+# Se va a probar la siguiente fórmula (igualmente sin preprocesado ni normalización)
+# mpg ~ disp + cyl + weight + hp
+
+# Se crea un modelo de regresión lineal empleando como variables predictorias a "disp", "cyl", "weight" y "hp". 
+autos_model2 <- lm(mpg ~ disp + cyl + weight + hp, autos_train_data)
+
+# Se realiza la predicción de los datos de prueba. 
+mpg_prediction2 <- predict(autos_model2, autos_test_data)
+
+# Se calcula el error cuadrático medio (mean-square error). 
+autos_mse2 <- mse(mpg_prediction2, autos_test_data$mpg)
+autos_mse2
+```
+
 6.b Investigar como implementar en R las técnicas de preprocesado y normalización vistas en clase y aplicarlas a los datos antes de pasarlos al modelo.
 
+```{r}
+# Procesar los 6 valores faltantes en "hp".
+#
+# Fuentes de los datos faltantes:
+#
+# https://en.wikipedia.org/wiki/Ford_Pinto
+# https://en.wikipedia.org/wiki/Ford_Maverick_(Americas)
+# https://www.automobile-catalog.com/car/1980/27095/renault_5_le_car.html
+# https://www.caranddriver.com/reviews/a15142429/1980-ford-mustang-cobra-review/
+# https://www.conceptcarz.com/z25395/renault-18i.aspx
+# https://www.automobile-catalog.com/make/amc/concord/concord_2-door_dl/1982.html
+# 
+autos_data[autos_data$hp == 0, ]
+missing_hp <- autos_data[autos_data$hp == 0, ]
+researched_names_missing <- c(" ford pinto", " ford maverick", " renault lecar deluxe", 
+                              " ford mustang cobra", " renault 18i", " amc concord dl")
+researched_hp_missing <- c(75L, 120L, 51L, 132L, 81L, 82L)
 
+# Se duplica el dataset (para poseer trazabilidad) y se cambia la variable "model.name" a character.
+autos_data_no_missing <- autos_data
+autos_data_no_missing$model.name <- as.character(autos_data_no_missing$model.name)
 
+# Se itera sobre cada uno de los valores por agregar.
+for (index in seq_along(researched_names_missing)) {
+  name <- researched_names_missing[index]
+  hp <- researched_hp_missing[index]
+  year <- missing_hp[index, ]$model.year # Existen varios modelos con el mismo nombre por distintos años.
+  autos_data_no_missing[(name == autos_data_no_missing$model.name) & 
+                          (year == autos_data_no_missing$model.year), ]$hp <- hp
+}
+
+# Se valida que los valores en el nuevo dataset se hayan cambiado correctamente
+# (se usa la comparación con el dataset original para mayor facilidad).
+autos_data_no_missing[autos_data$hp == 0, ]
+
+# Normalizar o estandarizar las variables para que calcen en una distribución normal. 
+autos_data_norm <- autos_data_no_missing
+autos_data_norm$weight_log <- log(autos_data_norm$weight)
+
+# Se grafica las correlaciones entre variables.
+ggpairs(autos_data_norm[, c("mpg", "cyl", "disp", "hp", "weight", "weight_log", "acc")])
+
+# Se genera el vector lógico para separar los dataframes de entrenamiento y pruebas.
+data_split_final <- sample.split(autos_data_norm, SplitRatio = 0.8)
+
+# Se carga el dataset con los datos de entrenamiento.
+autos_train_data_final <- subset(autos_data_norm, data_split == TRUE)
+
+# Se carga el dataset con los datos de prueba. 
+autos_test_data_final <- subset(autos_data_norm, data_split == FALSE)
+
+# Se seleccionan las variables para usarlas como variables predictorias.
+# Se crea un modelo de regresión lineal.
+# Se ajustan los parámetros de la función. 
+autos_model_final <- lm(mpg ~ poly(weight_log, 2) + poly(hp, 3) + poly(disp, 3) + poly(acc, 5), 
+                        autos_train_data_final)
+
+# Se realiza la predicción de los datos de prueba. 
+mpg_prediction_final <- predict(autos_model_final, autos_test_data_final)
+
+# Se calcula el error cuadrático medio (mean-square error).
+autos_mse_final <- mse(mpg_prediction_final, autos_test_data_final$mpg)
+autos_mse_final
+```
+
+Se logró mejorar el MSE del modelo de un `r autos_mse` a un MSE final de `r autos_mse_final`.
