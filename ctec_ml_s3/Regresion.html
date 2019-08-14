@@ -1760,7 +1760,7 @@ autos_model &lt;- lm(mpg ~ weight + disp, autos_train_data)</code></pre>
 mpg_prediction &lt;- predict(autos_model, autos_test_data)
 
 # Se calcula el error cuadrático medio (mean-square error). 
-autos_mse &lt;- mse(mpg_prediction, autos_test_data$mpg)
+autos_mse &lt;- mse(actual = autos_test_data$mpg, predicted = mpg_prediction)
 autos_mse</code></pre>
 <pre><code>## [1] 17.87387</code></pre>
 <ol start="6" style="list-style-type: decimal">
@@ -1777,7 +1777,7 @@ autos_model2 &lt;- lm(mpg ~ disp + cyl + weight + hp, autos_train_data)
 mpg_prediction2 &lt;- predict(autos_model2, autos_test_data)
 
 # Se calcula el error cuadrático medio (mean-square error). 
-autos_mse2 &lt;- mse(mpg_prediction2, autos_test_data$mpg)
+autos_mse2 &lt;- mse(actual = autos_test_data$mpg, predicted = mpg_prediction2)
 autos_mse2</code></pre>
 <pre><code>## [1] 17.79894</code></pre>
 <p>6.b Investigar como implementar en R las técnicas de preprocesado y normalización vistas en clase y aplicarlas a los datos antes de pasarlos al modelo.</p>
@@ -1850,7 +1850,7 @@ autos_model_final &lt;- lm(mpg ~ poly(weight_log, 2) + poly(hp, 3) + poly(disp, 
 mpg_prediction_final &lt;- predict(autos_model_final, autos_test_data_final)
 
 # Se calcula el error cuadrático medio (mean-square error).
-autos_mse_final &lt;- mse(mpg_prediction_final, autos_test_data_final$mpg)
+autos_mse_final &lt;- mse(actual = autos_test_data_final$mpg, predicted = mpg_prediction_final)
 autos_mse_final</code></pre>
 <pre><code>## [1] 14.53498</code></pre>
 <p>Se logró mejorar el MSE del modelo de un 17.8738692 a un MSE final de 14.5349769.</p>

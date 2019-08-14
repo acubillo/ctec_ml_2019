@@ -106,7 +106,7 @@ Pista: https://www.rdocumentation.org/packages/mltools/versions/0.3.5/topics/mse
 mpg_prediction <- predict(autos_model, autos_test_data)
 
 # Se calcula el error cuadrático medio (mean-square error). 
-autos_mse <- mse(mpg_prediction, autos_test_data$mpg)
+autos_mse <- mse(actual = autos_test_data$mpg, predicted = mpg_prediction)
 autos_mse
 ```
 
@@ -125,7 +125,7 @@ autos_model2 <- lm(mpg ~ disp + cyl + weight + hp, autos_train_data)
 mpg_prediction2 <- predict(autos_model2, autos_test_data)
 
 # Se calcula el error cuadrático medio (mean-square error). 
-autos_mse2 <- mse(mpg_prediction2, autos_test_data$mpg)
+autos_mse2 <- mse(actual = autos_test_data$mpg, predicted = mpg_prediction2)
 autos_mse2
 ```
 
@@ -192,7 +192,7 @@ autos_model_final <- lm(mpg ~ poly(weight_log, 2) + poly(hp, 3) + poly(disp, 3) 
 mpg_prediction_final <- predict(autos_model_final, autos_test_data_final)
 
 # Se calcula el error cuadrático medio (mean-square error).
-autos_mse_final <- mse(mpg_prediction_final, autos_test_data_final$mpg)
+autos_mse_final <- mse(actual = autos_test_data_final$mpg, predicted = mpg_prediction_final)
 autos_mse_final
 ```
 
