@@ -1,6 +1,8 @@
 ---
 title: "K-Means"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -8,97 +10,276 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Tarea 4.
-# Metodos no supervisados
+# Métodos no supervisados
 
 # Ejercicios 
 
 Librerias
 ```{r}
 library('ggplot2')
+library(GGally)
+library(reshape)
+library(tidyverse)
 ```
 
-1. Desarolle el Análisis del Problema
-```{r}
-# Construya el análisis del problema
-```
-Fuente del dataset:
-https://archive.ics.uci.edu/ml/datasets/Wholesale+customers
-
-
-2. Cargue el archivo Wholesale customers data.csv en una variable
-
-```{r}
-# Escriba su código aqui
-```
-
-3. Desarolle el Entendimiento de los Datos
-
-```{r}
-# Escriba su código aqui
-```
-
-4. Utilizando barplot cree un gráfico de los atributos del dataset, observe las correlaciones entre atributos
-
-```{r}
-# Escriba su código aqui
-```
-
-5. Explique el siguiente gráfico
-
-```{r}
-#Grafico
-#bxplt <- ggplot(data = melt(Wholesale), aes(x= variable, y = value))
-#bxplt <- bxplt + geom_boxplot()
-#bxplt <- bxplt + facet_wrap(~Channel)
-#bxplt <- bxplt + coord_flip()
-#bxplt <- bxplt + labs(x = 'producto', y  = 'ventas')
-#bxplt <- bxplt + ggtitle('Ventas por producto y por canal')
-#bxplt
-
-# Escriba su código aqui
-```
-
-6. Cree un modelo de agrupación K- Means
-Para agrupar a los clientes con base al consumo, vamos a utilizar solo las variables Fresh, Milk, Grocery, Frozen, Detergents_Paper y Delicassen. En este caso, vamos a intentar agrupar los clientes en 5 grupos diferentes.
-
-
-```{r}
-# Escriba su código aqui
-
-#5 Centroides utilizando k-means
-#modelo.agrupacion <- kmeans(Wholesale[,c(3:8)], centers = 5)
-
-#predecir utilizando el modelo para agregar una variable nueva llamada 'cluster' al conjunto de datos
-#Wholesale$cluster <- modelo.agrupacion$cluster
-
-#convertir la variable nueva a un factor
-#Wholesale$cluster <- factor(Wholesale$cluster)
-
-```
-
-6. Realice al menos 3 modelos cambiando los centroides 
-```{r}
-# Escriba su código aqui
-```
-
-7. Evaluacioón del modelo
-```{r}
-# Escriba su código aqui
-#Explicacion de los grupos generados
-#by(Wholesale, Wholesale$cluster, summary)
-```
-
-
-8. Desarolle al menos 5 conclusiones sobre los grupos realizados
+1. Desarrolle el Análisis del Problema.
+2. Cargue el archivo Wholesale customers data.csv en una variable.
+3. Desarolle el Entendimiento de los Datos.
+4. Utilizando barplot cree un gráfico de los atributos del dataset, observe las correlaciones entre atributos.
+5. Explique el gráfico.
+6. Cree un modelo de agrupación K-Means.
+7. Realice al menos 3 modelos cambiando los centroides.
+8. Evaluación del modelo.
+9. Desarolle al menos 5 conclusiones sobre los grupos realizados
   * Ejemplo:
     - Las principales características de cada grupo son:
-      - #### Grupo #1: (2do grupo más pequeño)
-      - Principalmente observaciones de la región 3 y el canal 1.
-      - Muy alto consumo de productos frescos.
-      - Bajo consumo de leche.
-      - Bajo consumo de comestibles.
-      - Alto consumo de alimentos congelados.
-      - Bajo consumo de detergentes.
-      - Bajo consumo de delicassen.
+      - Grupo #1: (2do grupo más pequeño)
+        - Principalmente observaciones de la región 3 y el canal 1.
+        - Muy alto consumo de productos frescos.
+        - Bajo consumo de leche.
+        - Bajo consumo de comestibles.
+        - Alto consumo de alimentos congelados.
+        - Bajo consumo de detergentes.
+        - Bajo consumo de delicassen.
 
+## Análisis del Problema
+
+A continuación se procede a analizar y utilizar el dataset __"Wholesale customers"__ para generar agrupamiento de diversos productos al por mayor.  
+
+__Fuente del dataset__: https://archive.ics.uci.edu/ml/datasets/Wholesale+customers  
+
+__Descripción__: el dataset se refiere a clientes de distribuición mayorista en Portugal. Incluye el gasto anual en unidades monetarias en diversas categorías de productos. Incluye las siguientes variables:  
+
+* __Channel__: Canal de clientes - Horeca (Hotel / Restaurante / Café) o Canal minorista (Nominal).  
+
+* __Region__: Región de clientes - Lisbon, Oporto u Otro (Nominal).  
+
+* __Fresh__: gasto anual en productos frescos (Continuo).  
+
+* __Milk__: gasto anual en productos lácteos (Continuo).  
+
+* __Grocery__: gasto anual en productos comestibles (Continuo).  
+
+* __Frozen__: gasto anual en productos congelados (Continuo).  
+
+* __Detergents_paper__: gasto anual en detergentes y productos de papel (Continuo).  
+
+* __Delicatessen__: gasto anual en productos delicatessen (Continuo).  
+
+__Pregunta por contestar__: ¿Còmo se agrupan los datos de productos mayoristas según su gasto anual?  
+
+## Carga de Datos
+
+```{r}
+# Se carga el archivo .CSV en el dataset. 
+wholesale_data <- read.csv("Wholesale.csv")
+```
+
+## Entendimiento de los Datos
+
+Primero demos un vistazo rápido a los datos dentro del dataset de __wholesale_data__. Además, podemos observar la cantidad de registros y variables.
+
+```{r}
+# Visualización de los primeros 6 elementos del dataset.
+head(wholesale_data)
+
+# ¿Cuántos datos hay en el dataset?
+nrow(wholesale_data)
+
+# ¿Cuáles son las variables con las que vamos a trabajar?
+names(wholesale_data)
+```
+
+Al parecer tenemos 440 registros de productos al por mayor según el canal de clientes y la región. Además, se cuenta con 8 variables numéricas de las cuales 2 son categóricas (Channel y Region).  
+
+Vamos a revisar si los datos presentan valores NA o si existe alguna inconsistencia entre los valores que se presentan.  
+
+```{r}
+# ¿Cómo se comportan los datos?
+summary(wholesale_data)
+```
+
+Al parecer no tenemos valores NA dentro de las variables. Además, no existen valores negativos lo cual es consistente con lo esperado al hablar al respecto de gasto anual (los valores deben ser igual o mayor a 0). A su vez se observa que la variable categórica de __Channel__ posee 2 valores (Horeca o minorista) y la variable __Region__ presenta 3 valores (Lisboa, Oporto y Otros) esto según lo esperado.  
+
+Vamos a observar las correlaciones entre atributos y las frecuencia de algunos valores:  
+
+```{r}
+# Vamos a visualizar ambos barplots uno al lado del otro.
+par(mfcol = c(1, 2))
+
+# ¿Cuál es la frecuencia de las regiones en el dataset?
+with(wholesale_data, barplot(table(Region), 
+                             main = "Distribución de los productos \nsegún la región",
+                             names.arg = c("Lisboa", "Oporto", "Otra Región")))
+
+# ¿Cuál es la frecuencia de los canales de clientes en el dataset?
+with(wholesale_data, barplot(table(Channel), 
+                             main = "Distribución de los canales \nde clientes",
+                             names.arg = c("Horeca", "Minoristas")))
+
+# Volvemos a mostrar un gráfico por ventana.
+par(mfcol = c(1, 1))
+```
+
+Como se observa en los gráficos anteriores, la moyor cantidad de datos se encuentran distribuidos entre "Otras Regiones" en el caso de la variable __Region__ y "Horeca" (Hotel/Restaurante/Café) en el caso de __Channel__.
+
+```{r}
+# ¿Cómo se correlacionan las variables de gasto anual?
+# Se omiten las variables Channel y Region al ser estas nominales categóricas.
+ggpairs(wholesale_data[, 3:8])
+```
+
+Se observa una alta correlación positiva entre las variables __Grocery__ y __Detergents_Paper__ (0.925). Posterior a esta la siguiente correlación positiva significativa se encuentra entre __Grocery__ y __Milk__ (0.728). No se observan correlaciones negativas significativas. Todas las variables poseen una distribución sesgada a la derecha. 
+
+```{r}
+# Explique el siguiente gráfico.
+melted_wholesale_data <- melt(wholesale_data, id.vars = c("Region", "Channel"))
+bxplt <- ggplot(data = melted_wholesale_data, aes(x= variable, y = value))
+bxplt <- bxplt + geom_boxplot()
+bxplt <- bxplt + facet_wrap(~Channel)
+bxplt <- bxplt + coord_flip()
+bxplt <- bxplt + labs(x = 'producto', y  = 'ventas')
+bxplt <- bxplt + ggtitle('Ventas por producto y por canal')
+bxplt
+```
+
+También observamos en el boxplot anterior como se comportan a nivel estadístico los valores de las ventas de los productos por canal. Se pueden observar una cantidad considerable de valores atípicos para cada uno de los tipo de productos según sus ventas. Además, se observa una mayor variabilidad de las ventas de los productos de tipo __Fresh__ en el caso del canal "Horeca" (1) y de __Grocery__, __Milk__ y __Fresh__ en el caso del canal "Minorista" (2). 
+
+Este comportamiento de los datos quizás se pueda explicar mejor si lo vemos en lugar de filtrar "por canal" si lo mostramos "por región". 
+
+```{r}
+bxplt <- ggplot(data = melted_wholesale_data, aes(x= variable, y = value))
+bxplt <- bxplt + geom_boxplot()
+bxplt <- bxplt + facet_wrap(~Region)
+bxplt <- bxplt + coord_flip()
+bxplt <- bxplt + labs(x = 'producto', y  = 'ventas')
+bxplt <- bxplt + ggtitle('Ventas por producto y por región')
+bxplt
+```
+
+Claramente se observa una variabilidad de los datos más similar entre las regiones y donde la variable con mayor variabilidad es __Fresh__ seguido por __Grocery__. Finalmente cabe destacar que se observan menos valores atípicos en las regiones de "Lisboa" y "Oporto", mientras que la mayor cantidad de valores atípicos se encuentran en la categoría de "Otra región".
+
+## Creación del Modelo
+
+Para agrupar a los clientes con base al consumo, vamos a utilizar solo las variables __Fresh__, __Milk__, __Grocery__, __Frozen__, __Detergents_Paper__ y __Delicatessen__. En este caso, vamos a intentar agrupar los clientes en 5 grupos diferentes.
+
+```{r}
+# Se crean 5 centroides utilizando k-means.
+modelo_agrupacion_kmeans <- kmeans(wholesale_data[, c(3:8)], centers = 5)
+
+# Utilizando el modelo se agrega una variable nueva llamada "cluster_5" al conjunto de datos.
+wholesale_data$cluster_5 <- modelo_agrupacion_kmeans$cluster
+
+# Se convierte la variable nueva a un factor.
+wholesale_data$cluster_5 <- factor(wholesale_data$cluster_5)
+```
+
+Del mismo modo se probó agrupando en 2 grupos distintos. 
+
+```{r}
+# Se crean 2 centroides utilizando k-means.
+modelo_agrupacion_kmeans2 <- kmeans(wholesale_data[, c(3:8)], centers = 2)
+
+# Utilizando el modelo se agrega una variable nueva llamada "cluster_2" al conjunto de datos.
+wholesale_data$cluster_2 <- modelo_agrupacion_kmeans2$cluster
+
+# Se convierte la variable nueva a un factor.
+wholesale_data$cluster_2 <- factor(wholesale_data$cluster_2)
+```
+
+En 3 grupos distintos. 
+
+```{r}
+# Se crean 3 centroides utilizando k-means.
+modelo_agrupacion_kmeans3 <- kmeans(wholesale_data[, c(3:8)], centers = 3)
+
+# Utilizando el modelo se agrega una variable nueva llamada "cluster_3" al conjunto de datos.
+wholesale_data$cluster_3 <- modelo_agrupacion_kmeans3$cluster
+
+# Se convierte la variable nueva a un factor.
+wholesale_data$cluster_3 <- factor(wholesale_data$cluster_3)
+```
+
+Y en 6 grupos distintos. 
+
+```{r}
+# Se crean 6 centroides utilizando k-means.
+modelo_agrupacion_kmeans4 <- kmeans(wholesale_data[, c(3:8)], centers = 6)
+
+# Utilizando el modelo se agrega una variable nueva llamada "cluster_6" al conjunto de datos.
+wholesale_data$cluster_6 <- modelo_agrupacion_kmeans4$cluster
+
+# Se convierte la variable nueva a un factor.
+wholesale_data$cluster_6 <- factor(wholesale_data$cluster_6)
+```
+
+## Evaluación del Modelo
+
+A continuación vamos a observar como se distribuyeron los datos según los 5 grupos generados en el primer k-means que se aplicó a los datos.
+
+```{r}
+# Se observan los datos distribuidos según la región.
+by(wholesale_data$Region, wholesale_data$cluster_5, table)
+
+# Se observan los datos distribuidos según el canal del cliente.
+by(wholesale_data$Channel, wholesale_data$cluster_5, table)
+
+# Se observa el gasto total en la categoría de productos del tipo "Fresh" en cada cluster.
+by(wholesale_data$Fresh, wholesale_data$cluster_5, sum)
+
+# Se observa el gasto total en la categoría de productos del tipo "Milk" en cada cluster.
+by(wholesale_data$Milk, wholesale_data$cluster_5, sum)
+
+# Se observa el gasto total en la categoría de productos del tipo "Grocery" en cada cluster.
+by(wholesale_data$Grocery, wholesale_data$cluster_5, sum)
+
+# Se observa el gasto total en la categoría de productos del tipo "Frozen" en cada cluster.
+by(wholesale_data$Frozen, wholesale_data$cluster_5, sum)
+
+# Se observa el gasto total en la categoría de productos del tipo "Detergent_Paper" en cada cluster.
+by(wholesale_data$Detergents_Paper, wholesale_data$cluster_5, sum)
+
+# Se observa el gasto total en la categoría de productos del tipo "Delicatessen" en cada cluster.
+by(wholesale_data$Delicassen, wholesale_data$cluster_5, sum)
+```
+
+## Conclusiones
+
+Con la información obtenida durante la sección de validación se puede concluir lo siguiente:
+
+1. __Grupo 1__: es el grupo más pequeño (posee 1 cliente de Oporto y 4 de otras regiones). 
+    - Conformado solamente por clientes del canal minorista.
+    - Posee un gasto anual intermedio en las categorías Milk, Detergent_Paper y Grocery.  
+    - Posee el gasto anual más bajo en las categorías Delicatessen, Frozen y Fresh.  
+<br/> 
+
+2. __Grupo 2__: conformado principalmente por clientes de otras regiones (47) y algunos pocos de Lisboa (14) y Oporto(10).
+    - Su mayor cantidad de clientes son del canal minorista (67).
+    - Posee el gasto anual más alto en las categorías Milk, Grocery y Detergent_Paper.
+    - Posee un gasto anual intermedio en las categorías Fresh y Delicatessen.
+    - Posee un gasto anual bajo en la categoría Frozen.  
+<br/>
+
+3. __Grupo 3__: es el grupo más grande (posee 41 clientes de Lisboa, 22 de Oporto y 164 de otras regiones).
+    - Conformado por la mayor cantidad de clientes del canal Horeca (181) y algunos minoristas (46). 
+    - Posee el gasto anual más alto en las categorías Frozen y Delicatessen.
+    - Posee un gasto anual alto en las categorías Fresh, Milk y Grocery.
+    - Posee un gasto anual intermedio en la categoría Detergent_Paper.  
+<br/>
+
+4. __Grupo 4__: es el segundo grupo más grande (posee 19 clientes de Lisboa, 13 de Oporto y 81 de otras regiones).
+    - Conformado principalmente por clientes del canal Horeca (91).
+    - Posee el gasto anual más alto en la categoría Fresh.
+    - Posee un gasto anual alto en las categorías Frozen y Delicatessen.
+    - Posee un gasto anual intermedio en las categorías Milk, Grocery, Detergent_Paper.  
+<br/>
+
+5. __Grupo 5__: es el segundo grupo más pequeño (posee 3 clientes de Lisboa, 1 de Oporto y 20 de otras regiones).
+    - Conformado principalmente por clientes del canal Horeca (22). 
+    - Posee un gasto anual alto en la categoría Fresh.
+    - Posee un gasto anual intermedio en las categorías Frozen y Delicatessen.
+    - Posee el gasto anual más bajo en las categorías Milk, Grocery y Detergent_Paper.  
+<br/>
+
+6. Se observa una distinción entre los productos que adquieren los clientes de los canales. Donde los clientes de __Horeca__ suelen adquirir más productos de las categorías __Frozen__, __Delicatessen__ y __Fresh__. Mientras que los clientes __minoristas__ suelen adquirir más de las categorías __Milk__, __Grocery__ y __Detergent_Paper__.  
 
