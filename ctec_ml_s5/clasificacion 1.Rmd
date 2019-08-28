@@ -1,6 +1,8 @@
 ---
 title: "Random Forest"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -15,51 +17,440 @@ Librerias
 library(caTools)
 library(rpart)
 library(randomForest)
+library(ggplot2)
+library(rpart.plot)
+library(ROCR)
 ```
 
-1. Desarolle el Análisis del Problema
+1. Desarolle el análisis del problema.
+2. Cargue el archivo agaricus_lepiota.data.csv en una variable.
+3. Desarolle el entendimiento de los datos.
+4. Utilizando barplot cree un gráfico de los atributos del dataset, observe las correlaciones entre atributos.
+5. Realice al menos 3 modelos vistos en clase.
+6. Evaluación del modelo.
+7. Desarolle al menos 3 conclusiones sobre las clasificaciones de los modelos.
+
+***  
+
+## Análisis del Problema
+
+Este conjunto de datos incluye descripciones de muestras hipotéticas correspondientes a 23 especies de hongos branquiales en el hongo de la familia Agaricus y Lepiota extraídas de la Guía de campo de la Sociedad Audubon de hongos de América del Norte (1981). Cada especie se identifica como definitivamente comestible, definitivamente venenosa o de comestibilidad desconocida y no se recomienda. Esta última clase se combinó con la venenosa. La Guía establece claramente que no existe una regla simple para determinar la comestibilidad de un hongo; ninguna regla como "folletos tres, que así sea" para el roble venenoso y la hiedra.  
+
+__Fuente del dataset__: https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data  
+
+__Fuente del dataset expandido__: https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/expanded.Z  
+
+El conjunto de datos se encuentra conformado por las siguientes 23 variables y sus posibles valores (en inglés):  
+
+* __class__: edible = e, poisonous = p  
+
+* __cap-shape__: bell = b, conical = c, convex = x, flat = f, knobbed = k, sunken = s  
+
+* __cap-surface__: fibrous = f, grooves = g, scaly = y, smooth = s  
+
+* __cap-color__: brown = n, buff = b, cinnamon = c, gray = g, green = r, pink = p, purple = u, red = e, white = w,  yellow = y  
+
+* __bruises__: bruises = t, no = f  
+
+* __odor__: almond = a, anise = l, creosote = c, fishy = y, foul = f, musty = m, none = n, pungent = p, spicy = s  
+
+* __gill-attachment__: attached = a, descending = d, free = f, notched = n  
+
+* __gill-spacing__: close = c, crowded = w, distant = d  
+
+* __gill-size__: broad = b, narrow = n  
+
+* __gill-color__: black = k, brown = n, buff = b, chocolate = h, gray = g, green = r, orange = o, pink = p, purple = u, red = e, white = w, yellow = y  
+
+* __stalk-shape__: enlarging = e, tapering = t  
+
+* __stalk-root__: bulbous = b, club = c, cup = u, equal = e, rhizomorphs = z, rooted = r, missing = ?  
+
+* __stalk-surface-above-ring__: fibrous = f, scaly = y, silky = k, smooth = s  
+
+* __stalk-surface-below-ring__: fibrous = f, scaly = y, silky = k, smooth = s  
+
+* __stalk-color-above-ring__: brown = n, buff = b, cinnamon = c, gray = g, orange = o, pink = p, red = e, white = w, yellow = y  
+
+* __stalk-color-below-ring__: brown = n, buff = b, cinnamon = c, gray = g, orange = o, pink = p, red = e, white = w, yellow = y  
+
+* __veil-type__: partial = p, universal = u  
+
+* __veil-color__: brown = n, orange = o, white = w, yellow = y  
+
+* __ring-number__: none = n, one = o, two = t  
+
+* __ring-type__: cobwebby = c, evanescent = e, flaring = f, large = l, none = n, pendant = p, sheathing = s, zone = z  
+
+* __spore-print-color__: black = k, brown = n, buff = b, chocolate = h, green = r, orange = o, purple = u, white = w, yellow = y  
+
+* __population__: abundant = a, clustered = c, numerous = n, scattered = s, several = v, solitary = y  
+
+* __habitat__: grasses = g, leaves = l, meadows = m, paths = p, urban = u, waste = w, woods = d  
+
+Como se observa para cada una de las variables, existe una definición de códigos por attributo que permite comprimir mejor los datos y reducir el espacio del archivo (en el caso del dataset original). A su vez existe un dataset expandido con mayor detalle del valor de cada uno de las variables en el dataset.  
+
+Se prentende usar este dataset para realizar varios modelos de clasificación supervisados y poder sacar conclusiones al respecto de los datos y las ventajas/desventajas de cada uno de los modelos empleados. La idea final de cada modelo es poder identificar según los atributos empleados, si un hongo es comestible o venenoso.   
+
+***  
+
+## Carga de Datos
+
+Para la carga de los datos por analizar se utilizó el archivo con formato expandido para poder poseer un mayor detalle de cada uno de los elementos almacenados según las variables y así no estar pendiente de la traducción de la codificación presentada en el archivo original. Además, este archivo presenta una mayor cantidad de datos registrados que el archivo con el formato codificado. 
+
+```{r} 
+data_hongos <- read.csv("expanded.txt", 
+                        header = FALSE, # El archivo no posee cabecera. 
+                        stringsAsFactors = TRUE, # Convierte las variables categóricas en factor.
+                        skip = 9, # Los datos empiezan en la línea 10.
+                        nrows = 8416, # Cantidad total de registros. 
+                        col.names = c("class", "cap-shape", "cap-surface", "cap-color", "bruises", "odor", 
+                                      "gill-attachment", "gill-spacing", "gill-size", "gill-color", 
+                                      "stalk-shape", "stalk-root", "stalk-surface-above-ring", 
+                                      "stalk-surface-below-ring",  "stalk-color-above-ring", 
+                                      "stalk-color-below-ring", "veil-type", "veil-color", "ring-number",
+                                      "ring-type", "spore-print-color", "population", "habitat"))
+```
+
+***  
+
+## Entendimiento de los Datos
+
+Vamos a observar la estructura actual de los datos.
+
 ```{r}
-# Construya el análisis del problema
-
-
-# Este conjunto de datos incluye descripciones de muestras hipotéticas correspondientes a 23 especies de # hongos branquiales en el hongo de la familia Agaricus y Lepiota extraídas de la Guía de campo de la # # Sociedad Audubon de hongos de América del Norte (1981). Cada especie se identifica como definitivamente # comestible, definitivamente venenosa o de comestibilidad desconocida y no se recomienda. Esta última # # clase se combinó con la venenosa. La Guía establece claramente que no existe una regla simple para # # # determinar la comestibilidad de un hongo; ninguna regla como "folletos tres, que así sea" para el # roble venenoso y la hiedra.
-
+str(data_hongos)
 ```
-Fuente del dataset:
-https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data
 
-1. Cargue el archivo agaricus_lepiota.data.csv en una variable
+Como se muestra previamente, se poseen 8416 observaciones con 23 variables categóricas por cada uno de los registros.  
 
 ```{r}
-# Escriba su código aqui
+summary(data_hongos)
 ```
 
-2. Desarolle el Entendimiento de los Datos
+Al realizar una sumarización de los datos se pueden observar datos interesantes como los siguientes:  
+
+* Las observaciones se dividen 4488 en __comestibles__ (`r round(4488 / nrow(data_hongos) * 100, 2)`%)  y 3928 en __venenosas__ (`r round(3928 / nrow(data_hongos) * 100, 2)`%).    
+
+* El tipo de velo (veil.type) solo posee observaciones del tipo __partial__.  
+
+* La mayoría de los registros pertenecen a los hábitats __woods__ (3160) y __grasses__ (2404).  
+
+A continuación vamos a observar el comportamiento de las variables según si las observaciones son de tipo venenosas o comestibles (variable __class__).  
 
 ```{r}
-# Escriba su código aqui
+table(data_hongos$class, data_hongos$cap.shape)
+ggplot(data_hongos, aes(x = cap.shape)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
 ```
 
-3. Utilizando barplot cree un gráfico de los atributos del dataset, observe las correlaciones entre atributos
+Se observa una ligera diferencia al comparar el __cap.shape__ (principalmente en los valores de __bell__, __knobbed__ y __sunken__). Podría ser interesante de emplear en el modelo en conjunto a otras variables.  
 
 ```{r}
-# Escriba su código aqui
+table(data_hongos$class, data_hongos$cap.surface)
+ggplot(data_hongos, aes(x = cap.surface)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
 ```
 
+Del mismo modo se observa una ligera diferencia al comparar el __cap.surface__ (principalmente en el valor __fibrous__). Podría ser interesante de emplear en el modelo en conjunto a otras variables.  
 
-4. Realice al menos 3 modelos vistos en clase
 ```{r}
-# Escriba su código aqui
+table(data_hongos$class, data_hongos$cap.color)
+ggplot(data_hongos, aes(x = cap.color)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
 ```
 
-5. Evaluación del modelo
+En el caso de __cap.color__ se nota una variabilidad interesante entre la distribución de colores.  
+
 ```{r}
-# Escriba su código aqui
-
+table(data_hongos$class, data_hongos$bruises)
+ggplot(data_hongos, aes(x = bruises)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
 ```
 
+Se observa una diferencia significativa al comparar __bruises__ entre si un hongo es comestible o no.  
 
-8. Desarolle al menos 3 conclusiones sobre las clasificaciones de los modelos
+```{r}
+table(data_hongos$class, data_hongos$odor)
+ggplot(data_hongos, aes(x = odor)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
+```
 
+Del mismo modo, se observa una diferencia significativa al comparar __odor__ entre si un hongo es comestible o no.  
 
+```{r}
+table(data_hongos$class, data_hongos$gill.attachment)
+ggplot(data_hongos, aes(x = gill.attachment)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
+```
 
+No se observa una diferencia significativa al comparar __gill.attachment__.  
+
+```{r}
+table(data_hongos$class, data_hongos$gill.spacing)
+ggplot(data_hongos, aes(x = gill.spacing)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
+```
+
+Se observa una ligera diferencia al comparar el __gill.spacing__. Podría ser interesante de emplear en el modelo en conjunto a otras variables.  
+
+```{r}
+table(data_hongos$class, data_hongos$gill.size)
+ggplot(data_hongos, aes(x = gill.size)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
+```
+
+Del mismo modo, se observa una ligera diferencia al comparar el __gill.size__.  
+
+```{r}
+table(data_hongos$class, data_hongos$gill.color)
+ggplot(data_hongos, aes(x = gill.color)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
+```
+
+En el caso de __gill.color__ se nota una variabilidad interesante entre la distribución de colores.  
+
+```{r}
+table(data_hongos$class, data_hongos$stalk.shape)
+ggplot(data_hongos, aes(x = stalk.shape)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
+```
+
+No se observa una diferencia significativa al comparar __stalk.shape__.  
+
+```{r}
+table(data_hongos$class, data_hongos$stalk.root)
+ggplot(data_hongos, aes(x = stalk.root)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
+```
+
+Se observa una ligera diferencia al comparar el __stalk.root__. Podría ser interesante de emplear en el modelo en conjunto a otras variables.   
+
+```{r}
+table(data_hongos$class, data_hongos$stalk.surface.above.ring)
+ggplot(data_hongos, aes(x = stalk.surface.above.ring)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
+```
+
+Se observa una ligera diferencia al comparar el __stalk.surface.above.ring__ (principalmente en los valores de __silky__ y __smooth__).    
+
+```{r}
+table(data_hongos$class, data_hongos$stalk.surface.below.ring)
+ggplot(data_hongos, aes(x = stalk.surface.below.ring)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
+```
+
+Del mismo modo para __stalk.surface.below.ring__. Pero estas dos son muy similares entre si, por lo que se puede escoger una de las 2 para los modelos.       
+
+```{r}
+table(data_hongos$class, data_hongos$stalk.color.above.ring)
+ggplot(data_hongos, aes(x = stalk.color.above.ring)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
+
+table(data_hongos$class, data_hongos$stalk.color.below.ring)
+ggplot(data_hongos, aes(x = stalk.color.below.ring)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
+```
+
+Se observa una diferencia significativa al comparar __stalk.color.above.ring__ y __stalk.color.below.ring__ entre si un hongo es comestible o no. Pero entre ellas son muy similares, por lo que para el modelo se podría emplear solamente una de las dos. 
+
+```{r}
+table(data_hongos$class, data_hongos$veil.type)
+```
+
+Como se mencionó previamente, todas las observaciones en el caso del atributo __veil.type__ son __partial__. Por lo que quizás no sea necesaria para el modelo.  
+
+```{r}
+table(data_hongos$class, data_hongos$veil.color)
+ggplot(data_hongos, aes(x = veil.color)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
+```
+
+Se observa una ligera diferencia al comparar el __veil.color__.  
+
+```{r}
+table(data_hongos$class, data_hongos$ring.number)
+ggplot(data_hongos, aes(x = ring.number)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
+```
+
+No se observa una diferencia significativa al comparar __ring.number__.  
+
+```{r}
+table(data_hongos$class, data_hongos$ring.type)
+ggplot(data_hongos, aes(x = ring.type)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
+```
+
+Pero sí es relativamente significativa en el caso de __ring.type__.  
+
+```{r}
+table(data_hongos$class, data_hongos$spore.print.color)
+ggplot(data_hongos, aes(x = spore.print.color)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
+```
+
+Se observa una diferencia significativa al comparar __spore.print.color__ entre si un hongo es comestible o no.  
+
+```{r}
+table(data_hongos$class, data_hongos$population)
+ggplot(data_hongos, aes(x = population)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
+```
+
+Del mismo modo, al comparar __population__ entre si un hongo es comestible o no.  
+
+```{r}
+table(data_hongos$class, data_hongos$habitat)
+ggplot(data_hongos, aes(x = habitat)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("class"))
+```
+
+Finalmente, se observa una ligera diferencia entre los valores del attributo __habitat__.  
+
+***  
+
+## Creación del Modelo
+
+A continuación se van a crear 3 modelos distintos de agrupación supervisada: un __árbol de decisión__, un __random forest__ y una __regresión logística__. Empecemos por dividir los datos aleatoriamente entre un conjunto para entrenamiento y otro para pruebas posteriores en la sección de evaluación del modelo. 
+
+```{r}
+set.seed(123)
+data_split <- sample.split(data_hongos$class, SplitRatio = 0.8)
+data_hongos_train <- subset(data_hongos, data_split == TRUE)
+data_hongos_test <- subset(data_hongos, data_split == FALSE)
+```
+
+Luego vamos a definir el modelo para el árbol de decisión. Para los tres modelos se va a utilizar la siguiente fórmula:  
+
+__class = cap.shape + cap.surface + cap.color + bruises + odor + gill.spacing + gill.size + gill.color + stalk.root + stalk.surface.below.ring + stalk.color.below.ring + veil.color + ring.type + spore.print.color + population + habitat__  
+
+```{r}
+arbol_decision_model <- rpart(class ~ cap.shape + cap.surface + cap.color + bruises + odor + 
+                                gill.spacing + gill.size + gill.color + stalk.root + 
+                                stalk.surface.below.ring + stalk.color.below.ring + veil.color + 
+                                ring.type + spore.print.color + population + habitat, 
+                              data = data_hongos_train, 
+                              method = "class")
+
+arbol_decision_predicciones <- predict(arbol_decision_model, 
+                                       newdata = data_hongos_test, 
+                                       type = "class")
+```
+
+A continuación se crea el modelo random forest para el dataset de hongos.  
+
+```{r}
+random_forest_model <- randomForest(class ~ cap.shape + cap.surface + cap.color + bruises + odor + 
+                                gill.spacing + gill.size + gill.color + stalk.root + 
+                                stalk.surface.below.ring + stalk.color.below.ring + veil.color + 
+                                ring.type + spore.print.color + population + habitat, 
+                                data = data_hongos_train)
+
+random_forest_predicciones <- predict(random_forest_model, 
+                                      newdata = data_hongos_test, 
+                                      type = "class")
+```
+
+Finalmente, se crea el modelo para la regresión logística.  
+
+```{r}
+regresion_logistica_model <- glm(class ~ cap.shape + cap.surface + cap.color + bruises + odor + 
+                                gill.spacing + gill.size + gill.color + stalk.root + 
+                                stalk.surface.below.ring + stalk.color.below.ring + veil.color + 
+                                ring.type + spore.print.color + population + habitat, 
+                                data = data_hongos_train, 
+                                family = binomial)
+
+regresion_logistica_predicciones <- predict(regresion_logistica_model, 
+                                            newdata = data_hongos_test,
+                                            type = "response")
+```
+
+***  
+
+## Evaluación del Modelo
+
+Ahora vamos a analizar y evaluar que tan buenos resultaron los modelos empleados en la sección anterior. Empezando por el de árbol de decisión.  
+
+```{r}
+rpart.plot(arbol_decision_model,
+           shadow.col = "gray",
+           main = "Modelo árbol de decisión\nselección de hongos comestibles o venenosos")
+
+table(data_hongos_test$class, arbol_decision_predicciones)
+
+arbol_decision_predicciones_roc <- prediction(c(arbol_decision_predicciones), c(data_hongos_test$class))
+as.numeric(performance(arbol_decision_predicciones_roc, measure = "auc")@y.values)
+
+plot(performance(arbol_decision_predicciones_roc, "tpr", "fpr"),
+     colorize = T,
+     print.cutoffs.at = seq(0, 1, by = 0.1),
+     text.adj = c(-0.2, 1.7),
+     main = 'Curva ROC del modelo árbol de decisión')
+```
+
+Luego evaluamos el modelo de random forest.  
+
+```{r}
+table(data_hongos_test$class, random_forest_predicciones)
+
+random_forest_predicciones_roc <- prediction(c(random_forest_predicciones), c(data_hongos_test$class))
+as.numeric(performance(random_forest_predicciones_roc, measure = "auc")@y.values)
+
+plot(performance(random_forest_predicciones_roc, "tpr", "fpr"),
+     colorize = T,
+     print.cutoffs.at = seq(0, 1, by = 0.1),
+     text.adj = c(-0.2, 1.7),
+     main = 'Curva ROC del modelo random forest')
+```
+
+Finalmente, evaluamos el modelo de regresión logística. 
+
+```{r}
+table(data_hongos_test$class, regresion_logistica_predicciones >= 0.8)
+
+regresion_logistica_predicciones_roc <- prediction(c(regresion_logistica_predicciones), c(data_hongos_test$class))
+as.numeric(performance(regresion_logistica_predicciones_roc, measure = "auc")@y.values)
+
+plot(performance(regresion_logistica_predicciones_roc, "tpr", "fpr"),
+     colorize = T,
+     print.cutoffs.at = seq(0, 1, by = 0.1),
+     text.adj = c(-0.2, 1.7),
+     main = 'Curva ROC del modelo regresión logística')
+```
+
+***  
+
+## Conclusiones
+
+Del desarrollo de los modelos se puede concluir lo siguiente:  
+
+* Los modelos __random forest__ y __regresión logística__ fueron muy robustos en la agrupación de los datos gracias a sus bondades: pocas suposiciones y preparación de los datos debido a la forma en el que se encontraba estructurado el dataset.  
+
+* A pesar de haber devuelto 11 falsos-positivos (hongos venenosos que agrupó como comestibles) el modelo __árbol de decisión__ posee una confiabilidad alta (0.99). Aunque debido a la importancia de lo que se desea responder se debe tener cuidado al emplearlo en este caso (un error puede collevar a la intoxicación y muerte de una persona). Por lo tanto debe mejorarse el ajuste de los datos ya sea modificando la fórmula o ajustando los parámetros del modelo.  
+
+* En términos generales los tres modelos son bastante sencillos de emplear y requieren poca limpieza de los datos. No obstante el proceso de análisis de los datos sigue siendo primordial a la hora de aplicar cualquiera de estos modelos.  
+
+* Existe un poco de incertidumbre en los modelos __random forest__ y __árbol de decisión__ sobre temas como: interpretación de los datos, control de cómo se realiza la agrupación de los datos, y pérdida de información.  
