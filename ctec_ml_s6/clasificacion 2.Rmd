@@ -1,6 +1,8 @@
 ---
 title: "Clase 6"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -8,63 +10,310 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Tarea 6.
-# Metodos supervisados 2
+# Métodos supervisados 2
 
 Librerias
 ```{r}
 library(caTools)
 library(rpart)
-#..........Librerias de los modelos
+library(tidyverse)
+library(randomForest)
+library(neuralnet)
+library(class)
+library(caret)
+library(e1071)
+library(ROCR)
 ```
 
-1. Desarolle el An?lisis del Problema
+1. Desarolle el Análisis del Problema.
+2. Cargue el archivo nombre.csv en una variable.
+3. Desarolle el Entendimiento de los Datos.
+4. Utilizando barplot cree un gráfico de los atributos del dataset, observe las correlaciones entre atributos.
+5. Realice al menos 5 modelos de los observados en clase.
+6. Evaluación de los modelos.
+7. Desarolle al menos 5 conclusiones sobre las clasificaciones de los modelos.
+
+## Análisis del Problema
+
+El Consejo de Seguridad Vial de Costa Rica (COSEVI) posee en su portal de datos abiertos información sobre: accidentes de tránsito, personas accidentadas, fallecidos en sitio, conductores y licencias, infracciones y pruebas teóricas y prácticas.  
+
+En el caso de los accidentes de tránsito con víctimas (donde al menos una persona resultó herida o fallecida) los datos se obtienen mediante el parte oficial de tránsito que realiza la Dirección General de Policía de Tránsito al presentarse un accidente, los cuales ingresan a la base de datos de dos formas (hand held y papel). Debido a que parte de la labor principal de la Institución es salvar vidas, y por los recursos limitados que existen, se trabaja solo con accidentes con heridos y/o fallecidos; y no se trabaja con accidentes que presentan solo daños materiales. Además, posteriormente inicia el proceso de limpieza, corrección de inconsistencias, validación de algunas variables, georeferenciación de los accidentes, entre otros.  
+
+La fuente de los datos entre 2013-2017 se encuentra en: http://datosabiertos.csv.go.cr/dashboards/19683/accidentes/.   
+
+Accidente con víctima se refiere cuando en el accidente de tránsito al menos uno de los participantes resulto: herido leve, grave o fallecido. Algunos tipos de lesión (herido grave, herido leve e ileso) son una valoración subjetiva realizada por el oficial de tránsito al llegar al sitio, sin criterio médico. Los fallecidos son los que ocurren en el lugar de los hechos o durante el traslado, no involucra los que se presentan en el hospital.   
+
+Otro dataset importante es el de las personas accidentadas entre 2013-2017 disponible en: http://datosabiertos.csv.go.cr/dashboards/19745/personas-accidentadas/. En donde se presentan las características de personas involucradas en accidentes con víctimas, los datos se obtienen del parte oficial de tránsito.  
+
+Se pretende utilizar este último dataset para determinar un modelo de clasificación de las víctimas de un accidente según la información dentro de las variables del dataset:  
+
+* __Rol__: que rol presentaba la víctima durante el accidente entre conductor, motociclista, ciclista, peatón, pasajero moto, pasajero carro, pasajero bicicleta, pasajero bus o microbús, dueño de propiedad, otro (categórica).  
+* __Tipo de lesión__: categoría de lesión entre ileso, herido leve, herido grave, muerte (categórica).  
+* __Edad__: edad de la víctima del accidente (numérica discreta).  
+* __Edad Quinquenal__: rango de edades cada 5 años (categórica ordinal).  
+* __Sexo__: sexo de la víctima (categórica).  
+* __Año__: año en que ocurrió el accidente (numérica discreta).  
+* __Mes__: mes en que ocurrió el accidente (categórica).  
+* __Día__: día en que ocurrió el accidente (categórica).  
+* __Provincia__: provincia del país en que ocurrió el accidente (categórica).  
+* __Cantón__: cantón de la provincia en que ocurrió el accidente (categórica).  
+* __Distrito__: distrito del cantón en que ocurrió el accidente (categórica).  
+
+__La idea con estos datos es determinar cuáles pueden emplearse para clasificar las víctimas de un accidente según el tipo de lesión y poder lograr responder efectivamente a este tipo de accidentes de una forma mejor para evitar o reducir víctimas mortales.__  
+
+## Carga de Datos
+
+A continuación se carga el dataset obtenido de las personas accidentadas entre 2013-2017.  
+
 ```{r}
-# Construya el análisis del problema
-
-
-# Los datos se obtienen mediante el  parte oficial de tr?nsito que realiza la Direcci?n General de Polic?a de Tr?nsito al presentarse un accidente, los cuales ingresan a la base de datos de dos formas (hand held y papel). Debido a que parte de la labor principal de la Instituci?n es salvar vidas, y por los recursos limitados que existen, se trabaja solo con accidentes con heridos y/o fallecidos; y no se trabaja con accidentes que presentan solo da?os materiales. Adem?s, posteriormente inicia el proceso de limpieza, correcci?n de inconsistencias, validaci?n de algunas variables,  georeferenciaci?n de los accidentes, entre otros.
-
-
-#Accidente con v?ctima se refiere cuando en el accidente de tr?nsito al menos uno de los participantes resulto: herido leve, grave o fallecido.
-
-#Para m?s informaci?n revisar la metodolog?a del documento Memoria estad?stica de accidentes de tr?nsito con v?ctimas.Periodo 2012-2014.
-
+data <- read.csv("temp_5571830814335439232.csv")
+head(data)
 ```
-Fuente del dataset:
-http://datosabiertos.csv.go.cr/dashboards/19683/accidentes/
 
-1. Cargue el archivo nombre.csv en una variable
+Cómo se observa los datos fueron cargados correctamente. En la siguiente sección vamos a visualizar algunas estadísticas, limpiar/transformar valores y observar relaciones entre datos.  
+
+## Entendimiento de los Datos
 
 ```{r}
-# Escriba su c?digo aqui
+glimpse(data)
+summary(data$A_Persona)
+levels(data$Rol)
+levels(data$Tipo.de.lesión)
+levels(data$Edad)
+levels(data$Edad.quinquenal)
 ```
 
-2. Desarolle el Entendimiento de los Datos
+Como se observa en la estructura inicial del dataset contamos con algunas variables duplicadas __(Día.1, Mes.1, Edad.quinquenal.1)__. A su vez la variable __A_Persona__ parece no poseer ningún valor distinto a 1 (lo cual no es muy útil). La variable __Edad__ es de tipo factor cuando debería ser numérica. Finalmente observamos, que las variables __Sexo__, __Edad__ y __Edad.quinquenal__ poseen valores "Desconocido" que deben ser removidos antes de implementar el modelo (representan 8216 registros del total de `r nrow(data)`, lo cual es alrededor del 5% de los registros).  
+
+Vamos a realizar estos cambios al dataset para poder continuar con el análisis exploratorio de los datos.  
 
 ```{r}
-# Escriba su c?digo aqui
+data2 <- data %>% 
+  select(-A_Persona, -Día.1, -Mes.1, -Edad.quinquenal.1) %>% 
+  filter(Edad != "Desconocido") %>% 
+  mutate(Edad = as.integer(as.character(Edad)))
 ```
 
-3. Utilizando barplot cree un gr?fico de los atributos del dataset, observe las correlaciones entre atributos
+Otra modificación importante es ordenar las categorías de __Edad.quinquenal__.  
 
 ```{r}
-# Escriba su c?digo aqui
+# Quitamos el level "Desconocida" que ya no posee datos. 
+# Ordenamos los levels según los rangos de edad. 
+data3 <- data2 %>% 
+  mutate(Edad.quinquenal = droplevels(Edad.quinquenal)) %>% 
+  mutate(Edad.quinquenal = ordered(Edad.quinquenal, c("De 0 a 4",  "De 5 a 9",   "De 10 a 14",  "De 15 a 19",  "De 20 a 24",  "De 25 a 29", "De 30 a 34",  "De 35 a 39",  "De 40 a 44",  "De 45 a 49", "De 50 a 54",  "De 55 a 59",  "De 60 a 64", "De 65 a 69",  "De 70 a 74", "Mayor a 75")))
+
+# Validamos que los levels fueron ordenados y el valor "Desconocida" fue removido.
+levels(data3$Edad.quinquenal)
 ```
 
+Otro cambio importante basado en la forma en que se desea determinar el modelo es la forma en que se categorizan las personas accidentadas. Se requiere agrupar aquellas que requieren atención (herido leve, herido grave, muerto) y las que no (ileso).
 
-4. Realice al menos 5 modelos de los observados en clase
 ```{r}
-# Escriba su c?digo aqui
+data4 <- data3 %>% 
+  mutate(Requiere.atencion = if_else((Tipo.de.lesión == "Herido grave" | 
+                                        Tipo.de.lesión == "Herido leve" | 
+                                        Tipo.de.lesión == "Muerte"), "Si", "No")) %>% 
+  mutate(Requiere.atencion = as.factor(Requiere.atencion))
 ```
 
-5. Evaluaci?n de los modelos
+Ahora vamos a tratar de observar el comportamiento de los datos según su distribución según la variable __Requiere.atencion__.  
+
 ```{r}
-# Escriba su c?digo aqui
-
+ggplot(data4, aes(x = Rol)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("Requiere.atencion")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("¿Se requiere atención?", subtitle = "(según el rol)")
 ```
 
+Como se observa hay una gran distribución de los datos según el tipo de rol, donde la mayor cantidad de atención por parte de los servicios de tránsito tienen que ver con accidentados motociclistas, pasajeros de carro o conductores.  
 
-6. Desarolle al menos 5 conclusiones sobre las clasificaciones de los modelos
+```{r}
+ggplot(data4, aes(x = Edad)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("Requiere.atencion")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("¿Se requiere atención?", subtitle = "(según la edad)")
 
+ggplot(data4, aes(x = Edad.quinquenal)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("Requiere.atencion")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("¿Se requiere atención?", subtitle = "(según los rangos de edades)")
+```
 
+Con respecto a las edades o los rangos de edad, la atención principal por parte de los servicios se observa entre el rango de 20 hasta 40 años. De estas 2 variables se va a tomar la de __Edad.quinquenal__ para desarrollar el modelo de agrupamiento.   
 
+```{r}
+ggplot(data4, aes(x = Sexo)) + 
+  geom_histogram(stat = "count") +
+  facet_grid(c("Requiere.atencion")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("¿Se requiere atención?", subtitle = "(según el sexo)")
+```
+
+Según la variable de sexo, se observa una mayor cantidad de mujeres que requieren atención con respecto a cuando no requiren atención.  
+
+```{r}
+ggplot(data4, aes(x = Año, fill = Requiere.atencion)) + 
+  geom_histogram(stat = "count") +
+  ggtitle("Distribución de accidentados por año")
+
+ggplot(data4, aes(x = Mes, fill = Requiere.atencion)) + 
+  geom_histogram(stat = "count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Distribución de accidentados por mes")
+
+ggplot(data4, aes(x = Día, fill = Requiere.atencion)) + 
+  geom_histogram(stat = "count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Distribución de accidentados por día")
+```
+
+Con respecto a las variables de año, mes y día se observa una mayor cantidad de accidentes que requieren atención los fines de semana (de viernes a domingo), además el mes con mayor cantidad de accidentes que requieren atención es Diciembre. Finalmente, de los años reportados en los datos, 2016 posee la mayor cifra de accidentes, seguido por el 2017.  
+
+De estas ultimas variables se pueden utilizar las de mes y día para el modelo. La variable de año fuera de ser un histórico no presenta valor a la hora de generar la clasificación, aunque denota una leve tendencia en el incremento total de accidentes en el país (esto en términos generales indica que se debe incrementar la capacidad de las fuerzas de tránsito para resolver accidentes). 
+
+```{r}
+ggplot(data4, aes(x = Provincia, fill = Requiere.atencion)) + 
+  geom_histogram(stat = "count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggtitle("Distribución de accidentados por provincia")
+```
+
+Finalmente, con respecto a los accidentes según la provicia, se observa una mayor cantidad de accidentes en San José y Alajuela (tanto que requieran atención, como que no). Esto es representativo a la distrubución de la población en el país y no es útil para el objetivo del modelo (esto en términos generales indica cómo se debe distribuir la capacidad de las fuerzas de tránsito para resolver accidentes). Los datos de cantones y distritos se deben comportar de manera similar (por lo que no fueron graficados). 
+
+## Creación del Modelo
+
+Se van a crear 5 modelos distintos para agrupar los perfiles de accidentados entre si requiren atención o no. Se van a utilizar los siguientes tipos de clasificación supervisada: árboles de decisión, random forest, regresión logística, k-vecinos más próximos (KNN) y máquinas de soporte vectorial (SVM).  
+
+Empecemos por dividir los datos aleatoriamente entre un conjunto para entrenamiento y otro para pruebas posteriores en la sección de evaluación del modelo.  
+
+```{r}
+set.seed(345)
+data_split <- sample.split(data4$Requiere.atencion, SplitRatio = 0.7)
+data_train <- subset(data4, data_split == TRUE)
+data_test <- subset(data4, data_split == FALSE)
+```
+
+Para los modelos se va a utilizar la siguiente fórmula basada en el entendimiento de los datos realizado previamente:  
+
+__Requiere.atencion = Rol + Edad.quinquenal + Sexo + Mes + Día__  
+
+Primero se crea el modelo de árbol de decisión para el dataset.  
+
+```{r}
+arbol_decision_model <- rpart(Requiere.atencion ~ Rol + Edad.quinquenal + Sexo + Mes + Día, 
+                              data = data_train, 
+                              method = "class")
+
+arbol_decision_predicciones <- predict(arbol_decision_model, 
+                                       newdata = data_test, 
+                                       type = "class")
+```
+
+A continuación se crea el modelo random forest para el dataset.  
+
+```{r}
+random_forest_model <- randomForest(Requiere.atencion ~ Rol + Edad.quinquenal + Sexo + Mes + Día, 
+                                data = data_train)
+
+random_forest_predicciones <- predict(random_forest_model, 
+                                      newdata = data_test, 
+                                      type = "class")
+```
+
+Luego se crea el modelo para regresión logística usando el dataset.
+
+```{r}
+regresion_logistica_model <- glm(Requiere.atencion ~ Rol + Edad.quinquenal + Sexo + Mes + Día, 
+                                data = data_train, 
+                                family = binomial)
+
+regresion_logistica_predicciones <- predict(regresion_logistica_model, 
+                                            newdata = data_test,
+                                            type = "response")
+```
+
+También se crea el modelo para KNN usando el dataset.
+
+```{r}
+knn_train_control <- trainControl()
+knn_model <- train(Requiere.atencion ~ Rol + Edad.quinquenal + Sexo + Mes + Día,
+                   data = data_train[1:100,],
+                   method = "knn",
+                   trControl = knn_train_control)
+knn_predicciones <- predict(knn_model, newdata = data_test)
+```
+
+Finalmente se crea el modelo para SVM usando el dataset.
+
+```{r}
+svm_modelo <- svm(Requiere.atencion ~ Rol + Edad.quinquenal + Sexo + Mes + Día, 
+                  data = data_train[1:100,],
+                  kernel = 'linear', 
+                  cross = 2, 
+                  scale = FALSE)
+
+svm_predicciones <- predict(svm_modelo , newdata = data_test)
+```
+
+## Evaluación del Modelo
+
+A continuiación se evaluan los resultados obtenidos en los distintos modelos a través de una matriz de confusión para cada uno. 
+
+__Matriz de confusión y desempeño del modelo de árbol de decisión__
+
+```{r}
+table(data_test$Requiere.atencion, arbol_decision_predicciones)
+arbol_decision_predicciones_auc <- prediction(c(arbol_decision_predicciones), c(data_test$Requiere.atencion))
+as.numeric(performance(arbol_decision_predicciones_auc, measure = "auc")@y.values)
+```
+
+__Matriz de confusión y desempeño del modelo random forest__
+
+```{r}
+table(data_test$Requiere.atencion, random_forest_predicciones)
+random_forest_predicciones_auc <- prediction(c(random_forest_predicciones), c(data_test$Requiere.atencion))
+as.numeric(performance(random_forest_predicciones_auc, measure = "auc")@y.values)
+```
+
+__Matriz de confusión y desempeño del modelo de regresión logística__
+
+```{r}
+table(data_test$Requiere.atencion, regresion_logistica_predicciones >= 0.8)
+regresion_logistica_predicciones_auc <- prediction(c(regresion_logistica_predicciones), 
+                                                   c(data_test$Requiere.atencion))
+as.numeric(performance(regresion_logistica_predicciones_auc, measure = "auc")@y.values)
+```
+
+__Matriz de confusión y desempeño del modelo KNN__
+
+```{r}
+table(data_test$Requiere.atencion, knn_predicciones)
+knn_predicciones_auc <- prediction(c(knn_predicciones), c(data_test$Requiere.atencion))
+as.numeric(performance(knn_predicciones_auc, measure = "auc")@y.values)
+```
+
+__Matriz de confusión y desempeño del modelo SVM__
+
+```{r}
+table(data_test$Requiere.atencion, svm_predicciones)
+svm_predicciones_auc <- prediction(c(svm_predicciones), c(data_test$Requiere.atencion))
+as.numeric(performance(svm_predicciones_auc, measure = "auc")@y.values)
+```
+
+## Conclusiones  
+
+* Se observa el mejor resultado de clasificación al emplear el modelo de regresión logística sobre la formula empleada para determinar si las fuerzas policiales de tránsito requieren o no atender un caso con heridos o muertes.  
+
+* Del mismo modo, se observa un buen rendimiento sobre los modelos de árbol de decisión y random forest. Que además son fáciles de implementar y no requieren de mucho preprocesamiento de los datos.  
+
+* Los modelos de KNN y SVN son los que menor rendimiento retornan y a su vez, debido a la estructura de los datos son los que más tiempo de procesamiento toman para retornar un modelo de clasificación.  
+
+* El dataset inicial de personas accidentadas cuenta con un set de datos limitados que podría verse mejorado al emplear a su vez una combinación con los datos de accidentes vehiculares del COSEVI. Pero debido a la estructura de ambos datasets es difícil buscar una forma de combinarlos para brindar más detalles.  
+
+* No se empleó ANN dentro de los modelos debido al alto tiempo de procesamiento que tomaría retornar una solución debido a la gran cantidad de variables categóricas que requieren transformarse en matrices de valores dummies.  
+
+* No es recomendado el uso de KNN con la cantidad de variables que se generan posteriormente de transformar las variables categóricas a matrices de valores dummies (alrededor de 45 variables distintas).  
