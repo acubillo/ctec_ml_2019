@@ -267,7 +267,8 @@ __Matriz de confusión y desempeño del modelo de árbol de decisión__
 
 ```{r}
 table(data_test$Requiere.atencion, arbol_decision_predicciones)
-arbol_decision_predicciones_auc <- prediction(c(arbol_decision_predicciones), c(data_test$Requiere.atencion))
+arbol_decision_predicciones_auc <- ROCR::prediction(c(arbol_decision_predicciones), 
+                                                    c(data_test$Requiere.atencion))
 as.numeric(performance(arbol_decision_predicciones_auc, measure = "auc")@y.values)
 ```
 
@@ -275,7 +276,8 @@ __Matriz de confusión y desempeño del modelo random forest__
 
 ```{r}
 table(data_test$Requiere.atencion, random_forest_predicciones)
-random_forest_predicciones_auc <- prediction(c(random_forest_predicciones), c(data_test$Requiere.atencion))
+random_forest_predicciones_auc <- ROCR::prediction(c(random_forest_predicciones), 
+                                                   c(data_test$Requiere.atencion))
 as.numeric(performance(random_forest_predicciones_auc, measure = "auc")@y.values)
 ```
 
@@ -283,8 +285,8 @@ __Matriz de confusión y desempeño del modelo de regresión logística__
 
 ```{r}
 table(data_test$Requiere.atencion, regresion_logistica_predicciones >= 0.8)
-regresion_logistica_predicciones_auc <- prediction(c(regresion_logistica_predicciones), 
-                                                   c(data_test$Requiere.atencion))
+regresion_logistica_predicciones_auc <- ROCR::prediction(c(regresion_logistica_predicciones), 
+                                                         c(data_test$Requiere.atencion))
 as.numeric(performance(regresion_logistica_predicciones_auc, measure = "auc")@y.values)
 ```
 
@@ -292,7 +294,8 @@ __Matriz de confusión y desempeño del modelo KNN__
 
 ```{r}
 table(data_test$Requiere.atencion, knn_predicciones)
-knn_predicciones_auc <- prediction(c(knn_predicciones), c(data_test$Requiere.atencion))
+knn_predicciones_auc <- ROCR::prediction(c(knn_predicciones), 
+                                         c(data_test$Requiere.atencion))
 as.numeric(performance(knn_predicciones_auc, measure = "auc")@y.values)
 ```
 
@@ -300,7 +303,8 @@ __Matriz de confusión y desempeño del modelo SVM__
 
 ```{r}
 table(data_test$Requiere.atencion, svm_predicciones)
-svm_predicciones_auc <- prediction(c(svm_predicciones), c(data_test$Requiere.atencion))
+svm_predicciones_auc <- ROCR::prediction(c(svm_predicciones),
+                                         c(data_test$Requiere.atencion))
 as.numeric(performance(svm_predicciones_auc, measure = "auc")@y.values)
 ```
 
