@@ -1,31 +1,47 @@
 ---
 title: "Tarea 8"
-output: html_document
+author: "Adalberto Cubillo Rojas - 200838881"
+date: "23 Setiembre, 2019"
+output: 
+    html_document:
+        toc: yes
+        toc_depth: 4
+        toc_float: true
+editor_options: 
+  chunk_output_type: console
 ---
 
-# Tarea final
+***  
 
-## Desarrolla una pregunta
-Identifica una pregunta que se pueda responder con un modelo de aprendizaje máquina supervisado utilizando los datos del sitio web http://datosabiertos.presidencia.go.cr/home.
+```{r}
+library(stringr)
+library(readxl)
+library(tidyverse)
+library(GGally)
+library(Metrics)
+library(caTools)
+```
 
-Puedes escoger datos de otras fuentes, pero tiene que ser sobre Costa y tienen que ser datos abiertos para que otra persona pueda reproducir el análisis.
+# Tarea final  
 
+## Indicaciones  
 
-## Prepara los datos
-Ejecuta una exploración de datos para entender bien las variables que tienes disponibles y poder decidir cómo vas a responder tu pregunta. Es posible que tengas que cambiar la pregunta ligeramente (¡o mucho!), si es el caso describe el proceso y tu razonamiento para los cambios.
+### Desarrolla una pregunta  
+Identifica una pregunta que se pueda responder con un modelo de aprendizaje máquina supervisado utilizando los datos del sitio web http://datosabiertos.presidencia.go.cr/home.  
 
-Al final decide por 2 métodos de aprendizaje automático que son relevantes para la preguntas que quieres hacer.
+Puedes escoger datos de otras fuentes, pero tiene que ser sobre Costa y tienen que ser datos abiertos para que otra persona pueda reproducir el análisis.  
 
+### Prepara los datos  
+Ejecuta una exploración de datos para entender bien las variables que tienes disponibles y poder decidir cómo vas a responder tu pregunta. Es posible que tengas que cambiar la pregunta ligeramente (¡o mucho!), si es el caso describe el proceso y tu razonamiento para los cambios.  
 
-## Desarrollo modelos
-Desarolla 2 modelos de aprendizaje automatizado (supervisado o no supervisado). Recuerda utilizar la metodologia CRISP-DM para implementar los modelos. Si buscas inspiración toma en cuenta que existe un repositorio de github https://github.com/SCRUG/DCC para tomar ideas sobre que modelos desarrollar con este tipo de datos.
+Al final decide por 2 métodos de aprendizaje automático que son relevantes para la preguntas que quieres hacer.  
 
-Al final compara el desempeño de los dos modelos. Si es un método no supervisado el desempeño lo puedes describir como tu capacidad de responder la pregunta con una u otra (hay menos métricas y metodologías para hacer una comparación numérica).
+### Desarrollo modelos  
+Desarolla 2 modelos de aprendizaje automatizado (supervisado o no supervisado). Recuerda utilizar la metodologia CRISP-DM para implementar los modelos. Si buscas inspiración toma en cuenta que existe un repositorio de github https://github.com/SCRUG/DCC para tomar ideas sobre que modelos desarrollar con este tipo de datos.  
 
+Al final compara el desempeño de los dos modelos. Si es un método no supervisado el desempeño lo puedes describir como tu capacidad de responder la pregunta con una u otra (hay menos métricas y metodologías para hacer una comparación numérica).  
 
-
-### Calificación
-
+### Calificación  
 * Desarrollo pregunta 25 %
     + Comprensión del problema
     + Desarrollo pregunta
@@ -38,3 +54,400 @@ Al final compara el desempeño de los dos modelos. Si es un método no supervisa
 * Comparacion de modelos 25%
     + Evaluación de diferencias
     + Conclusiones
+
+***   
+    
+## Desarrollo  
+
+### Análisis del Problema
+
+#### Comprensión del Problema  
+
+Como parte de los datos abierto del Gobierno de Costa Rica, el Poder Judicial provee un conjunto de datasets con información relevante a temas relacionados con: catálogo de artículos, contrataciones públicas, femicidios, índice salarial, ejecución presupuestaria, pensiones alimenticias, personal del poder judicial, estadísticas policiales, presupuesto, violencia doméstica.  
+
+En el país distintos movimientos sociales buscan la forma de reducir las agresiones hacia las mujeres y los femicidios como parte del proceso de igualdad de los derechos y el reconocimiento de las capacidades de las mujeres en la sociedad costarricense.  
+
+Algunos datasets que podrían reflejar detalles con respecto a agresiones domésticas o femicidios serían:  
+
+* estadísticas policiales (url: http://datosabiertospj.eastus.cloudapp.azure.com/dataset/estadisticas-policiales)  
+* femicidos (url: http://datosabiertospj.eastus.cloudapp.azure.com/dataset/femicidios)  
+* violencia doméstica (url: http://datosabiertospj.eastus.cloudapp.azure.com/dataset/violencia-domestica)  
+
+Las estadísticas policiales son un conjunto de datos clasificados y depurados, para mostrar la frecuencia y el tipo de víctima de los diferentes delitos en cualquier parte del país. La información se encuentra distribuida entre varios archivos CSV que contemplan datos entre 2015 y 2019. Posee las siguientes variables:  
+
+* __Delito__: Descripción del delito (Texto)  
+* __SubDelito__: Descripción del Subdelito (Texto)  
+* __Fecha__: Fecha del delito (Fecha)  
+* __Victima__: Descripción de la victima (Texto)  
+* __SubVictima__: Descripción de la Subvictima (Texto)  
+* __Edad__: Descripción de la edad (Texto)  
+* __Genero__: Descripción del genero de la victima (Texto)  
+* __Nacionalidad__: Descripción de la nacionalidad de la victima (Texto)  
+* __Provincia__: Descripción de la provincia (Texto)  
+* __Canton__: Descripción del cantón (Texto)  
+* __Distrito__: Descripción del distrito (Texto)  
+
+Un acto de violencia doméstica se genera cuando un integrante del núcleo familiar maltrata o amedrenta de cualquier forma a otro miembro de la familia. Posee las siguientes variables:  
+
+* __Anno__: Año de la estadistica (Entero)  
+* __Mes__: Mes de la estadistica (Entero)  
+* __NombreMes__: Nombre del mes (Texto)  
+* __NombreMateria__: Nombre de la materia (Texto)  
+* __NombreCircuito__: Nombre del circuito (Texto)  
+* __NombreDespacho__: Descripción del despacho (Texto)  
+* __NombreTipoDespacho__: Descripción del tipo de despacho (Texto)  
+* __CirculanteInicial__: Cantidad de expedientes activos al iniciar el mes (Entero)  
+* __CirculanteInicialLeg__: Subconjunto del apartado anterior, en donde el tipos de caso es "Legajo", válido para despachos laborales y contenciosos (Entero)  
+* __Entrados__: Cantidad de expedientes entrados como nuevos durante el mes (Entero)  
+* __TestimoniosPiezas__: Subconjunto de los entrados, en donde el expediente sea un testimonio de piezas (Entero)  
+* __Legajos__: Subconjunto de los entrados, en donde el expediente sea un "legajo" (Entero)  
+* __Reentrados__: Cantidad de expedientes reentrados durante el mes (Entero)  
+* __TerminadosXImcompetencia__: Subconjunto de los terminados, en donde el motivo de término sea "Por Incompetencia" (Entero)  
+* __AbandonadosOInactivos__: Subconjunto de los terminados, en donde el motivo de término sea "Abandonado ó Inactivo" (Entero)  
+* __Terminados__: Cantidad de expedientes finalizados durante el mes (Entero)  
+* __CirculanteFinal__: Cantidad de expedientes activos al finalizar el mes (Entero)  
+* __CirculanteFinalLegajos__: Subconjunto del apartado anterior, en donde el tipos de caso es "Legajo", válido para despachos laborales y contenciosos (Entero)  
+
+El femicidio se da cuando una mujer es asesinada a manos de su pareja actual o pasada, o de otra persona con quien no tiene o tuvo una relación de pareja. El dataset posee las siguientes variables:  
+
+* __Periodo__: Número del periodo presupuestario (Por ejemplo 2017) (Entero)  
+* __CodTipoFemicidio__: Código del tipo de femicidio (Entero)  
+* __DesTipoFemicidio__: Descripción del tipo de femicidio (Texto)  
+* __Cantidad__: Cantidad de femicidios registrados (Númerico)  
+
+#### Pregunta por Responder  
+
+A continuación se busca identificar si existe relación entre la violencia doméstica y la cantidad de femicidios en el transcurso del tiempo en Costa Rica. A través de las siguientes preguntas:  
+
+* ¿Cuáles son los meses dónde más femicidios y violencia doméstica ocurren?  
+
+* ¿Cuál es la distribución de femicidios y violencia doméstica por provincia?  
+
+* Existe una correlación entre la cantidad de femicidios y violencia doméstica en el país?  
+
+* Visualizar una línea de tiempo entre la cantidad de incidentes de femicidios y violencia doméstica en el país.  
+
+### Análisis Exploratorio de los Datos
+
+#### Carga de los Datos
+
+Primero vamos a cargar los datos almacenados de femicidios. Estos se encuentran almacenados en un archivo .CSV sin etiquetas.
+
+```{r}
+femicidios <- read.csv("datos/femicidios.csv", header = FALSE)
+femicidios_headers <- c("periodo", "codigo_tipo_femicidio", "descripcion_tipo_femicidio", "cantidad")
+names(femicidios) <- femicidios_headers
+head(femicidios)
+
+rm(femicidios_headers)
+```
+
+Siguiente vamos a cargar la información sobre violencia doméstica. No podemos usar el archivo .CSV debido a que posee errores de escritura al emplear comas (,) dentro de los valores textuales de algunas columnas, lo que genera inconsistencias en la lectura. Por lo que se usará la biblioteca readxl y la función read_xls. Adicionalmente, al archivo .XLS se le limpiaron las comas adicionales a través de excel para evitar el mismo problema de importación.  
+
+```{r}
+violencia_domestica <- read_xls("datos/violencia_domestica.xls", sheet = 1)
+violencia_domestica_headers <- c("anno", "mes", "nombre_mes", "materia", "circuito", "despacho", "tipo_despacho", "circulante_inicial", "circulante_inicial_legajo", "entrados", "testimonios_piezas", "legajos", "reentrados", "terminados_incompetencia", "abandonados_inactivos", "terminados", "circulante_final", "circulante_final_legajos")
+names(violencia_domestica) <- violencia_domestica_headers
+head(violencia_domestica)
+
+rm(violencia_domestica_headers)
+```
+
+Finalmente, vamos a cargar las estadísticas policiales, las cuales poseen información sobre femicidios y violencia doméstica (en caso de ser necesario refinar los datos a partir de estos datasets). Al ser distintos archivos se van a cargar uno a uno y serán combinados en un solo dataframe.  
+
+Al igual que los datos de violencia doméstica, no podemos usar el archivo .CSV debido a que posee errores de escritura al emplear comas (,) dentro de los valores textuales de algunas columnas, lo que genera inconsistencias en la lectura. Por lo que se usará la biblioteca readxl y la función read_xls. Adicionalmente, al archivo .XLS se le limpiaron las comas adicionales a través de excel para evitar el mismo problema de importación.
+
+```{r}
+estadisticas_policiales <- data.frame()
+
+for (annos in as.character(2015:2019)) {
+    file_name <- str_interp("datos/policiales_${annos}.xls")
+    file_data <- read_xls(file_name, sheet = 1)
+    estadisticas_policiales <- rbind(estadisticas_policiales, file_data)
+}
+
+estadisticas_policiales_headers <- c("delito", "sub_delito", "fecha", "victima", "sub_victima", "edad", "sexo", "nacionalidad", "provincia", "canton", "distrito")
+names(estadisticas_policiales) <- estadisticas_policiales_headers
+head(estadisticas_policiales)
+
+rm(annos)
+rm(file_name)
+rm(file_data)
+rm(estadisticas_policiales_headers)
+```
+
+Como se observa en cada ejecución de la carga de datos, estos fueron accesados correctamente y se encuentran listos para realizar el proceso de entendimiento de nuestro EDA.  
+
+#### Entendimiento de los Datos  
+
+__Dataset Femicidio__  
+
+Primero analicemos los datos de femicidios. Vamos a observar que elementos poseen, cantidad de datos, algunas estadísticas y gráficas del mismo.  
+
+```{r}
+str(femicidios)
+summary(femicidios)
+```
+
+Como observamos, contamos con una cantidad limitada de observaciones (26 obs. y 4 variables). El dataset muestra el total de femicidios ocurridos por año y según el tipo de femicidio.  
+
+```{r}
+# Modificaciones para poder mostrar los datos en el gráfico. 
+femicidios <- femicidios %>% 
+    mutate(tipo_femicidio = ifelse(codigo_tipo_femicidio == 1, 
+                                   "Femicidio artículo 21", 
+                                   "Femicidio ampliado")) %>%
+    mutate(tipo_femicidio = as.factor(tipo_femicidio),
+           periodo = factor(periodo, labels = 2007:2019, ordered = TRUE))
+
+ggplot(data = femicidios, aes(x = periodo, y = cantidad, fill = tipo_femicidio)) +
+    geom_bar(stat = "identity", width = 0.7, position=position_dodge()) +
+    geom_text(aes(label = cantidad), vjust = 0, color = "black", size = 3.5, position = position_dodge(0.8))
+```
+
+En el gráfico anterior, podemos observar la distribución de femicidios (según su tipo) entre los años 2007 y 2019. El mayor número de femicidios se observa en el año 2011 con un total de 42 (30 de tipo ampliado y 12 del tipo artículo 21).  
+
+Mas allá de esta información no hay mucho más que determinar de este dataset.  
+
+__Dataset Violencia Doméstica__  
+
+En el caso del dataset de violencia doméstica podemos observar la siguiente información:  
+
+```{r}
+str(violencia_domestica)
+unique(violencia_domestica$anno)
+unique(violencia_domestica$materia)
+unique(violencia_domestica$anno)
+unique(violencia_domestica$tipo_despacho)
+unique(violencia_domestica$circuito)
+length(unique(violencia_domestica$despacho))
+
+# Conversión de los circuitos a provincias.
+sj_idx <- grep("SAN JOSE|SAN JOSÉ", violencia_domestica$circuito)
+alajuela_idx <- grep("ALAJUELA|ATENAS", violencia_domestica$circuito)
+heredia_idx <- grep("HEREDIA", violencia_domestica$circuito)
+cartago_idx <- grep("CARTAGO|TURRIALBA", violencia_domestica$circuito)
+limon_idx <- grep("LIMON|LIMÓN|ZONA ATLÁNTICA", violencia_domestica$circuito)
+guanacaste_idx <- grep("GUANACASTE", violencia_domestica$circuito)
+puntarenas_idx <- grep("PUNTARENAS|ZONA SUR|GOLFITO", violencia_domestica$circuito)
+violencia_domestica[sj_idx, "provincia"] = "SAN JOSE"
+violencia_domestica[alajuela_idx, "provincia"] = "ALAJUELA"
+violencia_domestica[heredia_idx, "provincia"] = "HEREDIA"
+violencia_domestica[cartago_idx, "provincia"] = "CARTAGO"
+violencia_domestica[limon_idx, "provincia"] = "LIMON"
+violencia_domestica[puntarenas_idx, "provincia"] = "PUNTARENAS"
+violencia_domestica[guanacaste_idx, "provincia"] = "GUANACASTE"
+
+rm(sj_idx)
+rm(alajuela_idx)
+rm(cartago_idx)
+rm(heredia_idx)
+rm(guanacaste_idx)
+rm(limon_idx)
+rm(puntarenas_idx)
+
+# Modificacioens necesarias para poder comprender los datos.
+violencia_domestica <- violencia_domestica %>% 
+    mutate(anno = factor(as.integer(anno), labels = 2015:2019, ordered = TRUE),
+           mes = factor(as.integer(mes), labels = 1:12, ordered = TRUE),
+           circulante_inicial = as.integer(circulante_inicial),
+           circulante_inicial_legajo = as.integer(circulante_inicial_legajo),
+           entrados = as.integer(entrados),
+           testimonios_piezas = as.integer(testimonios_piezas),
+           legajos = as.integer(legajos),
+           reentrados = as.integer(reentrados),
+           terminados_incompetencia = as.integer(terminados_incompetencia),
+           abandonados_inactivos = as.integer(abandonados_inactivos),
+           terminados = as.integer(terminados),
+           circulante_final = as.integer(circulante_final),
+           circulante_final_legajos = as.integer(circulante_final_legajos),
+           provincia = as.factor(provincia)) %>%
+    mutate(total_entrados = entrados + reentrados)
+
+summary(violencia_domestica)
+```
+
+Se observa información relevante a las fechas (año y mes), lugar (provincia) y cantidad total de casos entrantes de violencia doméstica (total_entrados). También podemos visualizarlo en una tabla sumarizada.  
+
+```{r}
+violencia_domestica %>% group_by(anno, mes) %>%
+    summarise(sum(total_entrados))
+
+violencia_domestica %>% group_by(anno) %>%
+    summarise(sum(total_entrados))
+```
+
+Acá se observan el total de casos por año y mes desde el 2015 hasta el 2019. A su vez se generó otra tabla con los datos totales anuales, en donde se observa un incremento en los casos de violencia doméstica año tras año (2019 posee menos, pero solo posee datos desde Enero hasta Julio).  
+
+```{r}
+# Modificación para poder mostrar el gráfico. 
+violencia_domestica <- violencia_domestica %>% 
+    mutate(fecha = str_glue("{anno}/{mes}/1")) %>%
+    mutate(fecha = as.Date(fecha, "%Y/%m/%d"))
+
+violencia_domestica_historico <- violencia_domestica %>% 
+    select(fecha, provincia, total_entrados) %>%
+    group_by(fecha, provincia) %>%
+    summarise(total_entrados = sum(total_entrados))
+
+ggplot(data = violencia_domestica_historico, aes(x = fecha, y = total_entrados, group = provincia)) +
+    geom_line(aes(color = provincia)) +
+    geom_point(aes(color = provincia))
+```
+
+Y como se observa en el gráfico anterior, en cada una de las provincias se da una tendencia al crecimiento de la violencia doméstica desde el 2015 hasta el 2019 (datos solo presentan información hasta Julio).  
+
+__Dataset Estadísticas Policiales__  
+
+Este es uno de los datasets más completos con 273103 obs. y 11 variables.  
+
+```{r}
+str(estadisticas_policiales)
+```
+
+Acá se observan variables interesantes como por ejemplo las de delitos y sub-delitos. Las cuales nos pueden dar más detalles sobre femicidios o violencia doméstica.  
+
+```{r}
+unique(estadisticas_policiales$delito)
+unique(estadisticas_policiales$sub_delito)
+unique(estadisticas_policiales$victima)
+unique(estadisticas_policiales$sub_victima)
+unique(estadisticas_policiales$nacionalidad)
+unique(estadisticas_policiales$provincia)
+```
+
+Dentro de los delitos que nos interesan se encuentran los homicidios. En estos tenemos las subcategorías de violencia doméstica y femicidios. Además, podemos observar algunas gráficas generales de las estadísticas policiales.  
+
+```{r}
+ggplot(data = estadisticas_policiales, aes(x = delito)) +
+    geom_histogram(stat = "count") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Por ejemplo, podemos observar una gran cantidad de registros con respecto a asaltos, robos y hurtos. Pero no muchos relacionados a homicidios (los que queremos analizar).  
+
+```{r}
+ggplot(data = estadisticas_policiales, aes(x = fct_infreq(sub_delito))) +
+    geom_histogram(stat = "count") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    coord_flip()
+```
+
+El mismo fenómeno lo podemos ver al graficar los sub-delitos. Los 3 más frecuentes son: por descuido, arma de fuego, forzadura.  
+
+```{r}
+ggplot(data = estadisticas_policiales, aes(x = fct_infreq(provincia))) +
+    geom_histogram(stat = "count") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    coord_flip()
+```
+
+También podemos ver la frecuencia de delitos según la provincia, donde San José presenta la mayor cantidad de delitos, seguido por Alajuela (con una diferencia de más del doble).   
+
+```{r}
+# Modificaciones al dataset de estadísticas policiales para obtener solamente los datos de femicidios y violencia doméstica. 
+estadisticas_policiales_historico <- estadisticas_policiales %>%
+    mutate(fecha = as.Date(fecha, "%Y-%m-%d"),
+           total = 1) %>%
+    filter(sub_delito == "FEMICIDIO" | sub_delito == "VIOLENCIA DOMESTICA") %>%
+    select(fecha, provincia, sub_delito, total) %>%
+    group_by(fecha, provincia, sub_delito) %>%
+    summarise(total = sum(total))
+
+ggplot(data = estadisticas_policiales_historico, aes(x = sub_delito)) +
+    geom_histogram(stat = "count") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(data = estadisticas_policiales_historico, aes(x = provincia, fill = sub_delito)) +
+    geom_histogram(stat = "count") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(data = estadisticas_policiales_historico, aes(x = fecha, y = total, group = sub_delito)) +
+    geom_line(aes(color = sub_delito)) +
+    geom_point(aes(color = sub_delito))
+```
+
+Finalmente, observamos que los datos policiales no muestran mucha distinción entre los registros de femicidios y violencia doméstica. Al ser tan pocos datos no se pueden observar diferencias significativas entre ellos. Se observa que la mayor de casos nuevamente están en la provincia de San José (seguido por Alajuela), 
+
+#### Decisión de Métodos de Análisis  
+
+Se prentende utilizar la __regresión lineal__ y __la regresión polinomial__ para predecir a partir de la información de violencia doméstica, los femicidios en el futuro. Para esto se van a utilizar los datos de las estadísticas policiales y se van a distribuir la cantidad de eventos según el tipo de sub_delito para poder buscar una correlación entre ellos.  
+
+### Modelado
+
+#### Preparación de los Datos
+
+Primero vamos a transformar el histórico de estadísticas policiales a un formato horizontal, en donde si se observan valores nulos o faltantes se rellena con 0.  
+
+```{r}
+estadisticas_policiales_horizontal <- spread(estadisticas_policiales_historico, sub_delito, total, fill = 0)
+head(estadisticas_policiales_horizontal)
+
+ggpairs(estadisticas_policiales_horizontal[, c("FEMICIDIO", "VIOLENCIA DOMESTICA")])
+```
+
+Se observa en este formato una correlación negativa de -0.651.  
+
+```{r}
+estadisticas_policiales_horizontal["provincia"] <- as.factor(estadisticas_policiales_horizontal$provincia)
+names(estadisticas_policiales_horizontal) <- c("fecha", "provincia", "femicidios", "violencia_domestica")
+
+set.seed(80085)
+data_split <- sample.split(estadisticas_policiales_horizontal$provincia, SplitRatio = 0.8)
+datos_train <- subset(estadisticas_policiales_horizontal, data_split == TRUE)
+datos_test <- subset(estadisticas_policiales_horizontal, data_split == FALSE)
+```
+
+Luego se generan los dataset de entrenamiento y pruebas. Ya estamos listos para desarrollar el modelo.  
+
+#### Creación de los Modelos
+
+__Modelo de Regresión Lineal__
+
+A continuación se generan los modelos que vamos a emplear para realizar las regresiones de los datos. 
+
+```{r}
+regresion_lineal_modelo <- lm(femicidios ~ fecha + violencia_domestica, 
+                              datos_train)
+```
+
+__Modelo de Regresión Polinomial__
+
+```{r}
+regresion_polinomial_modelo <- lm(femicidios ~ poly(fecha, 3) + poly(violencia_domestica, 2), 
+                                  datos_train)
+```
+
+#### Evaluación de los Modelos
+
+__Evaluación modelo de Regresión Lineal__  
+
+Finalmente se evaluan los resultados de los modelos al emplear los datos de pruebas seleccionados previamente.  
+
+```{r} 
+regresion_lineal_prediccion <- predict(regresion_lineal_modelo, datos_test)
+
+regresion_lineal_mse <- mse(actual = datos_test$femicidios, predicted = regresion_lineal_prediccion)
+regresion_lineal_mse
+```
+
+__Evaluación modelo de Regresión Polinomial__  
+
+```{r}
+regresion_polinomial_prediccion <- predict(regresion_polinomial_modelo, datos_test)
+
+regresion_polinomial_mse <- mse(actual = datos_test$femicidios, predicted = regresion_polinomial_prediccion)
+regresion_polinomial_mse
+```
+
+Se observa un menor resultado del MSE para el modelo de regresión polinomial, por lo que este sería el mejor modelo para los datos actuales sobre violencia doméstica y femicidios.  
+
+### Conclusiones
+
+* Los 3 conjuntos de datos que se utilizaron (femicidios, estadísticas policiales y violencia doméstica) presentan muchas incoherencias entre ellos. Esto evita poder unificar información entre ellos.  
+
+* El modelo que presenta mejor ajuste es el de regresión polinomial. Esto tiene sentido debido a la distribución de los datos actuales. 
+
+* A pesar de que los modelos funcionan y generan una predicción, hace falta muchos más datos para poder confiar realmente en el resultado de cada uno.  
+
+* Además de predecir la cantidad de femicidios, se podrían crear otros modelos para poder predecir en cuáles provincias, cantones o distritos habría una mayor cantidad de femicidios y poder así tomar decisiones de seguridad policial y prevención con respecto a estos resultados.  
